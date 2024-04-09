@@ -12,7 +12,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 
     // Determine maximizing or minimizing player
     bool maximizing_player = (board.side_to_move() == WHITE);
-    best_score = maximizing_player ? INT_MIN : INT_MAX;
+    best_score = (maximizing_player ? -1:1) * INFINITE;
 
     // Get legal moves
     std::deque<Move> moves = std::move(board.get_psuedo_legal_moves());
@@ -68,7 +68,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 
 void Engine::search()
 {
-    absearch(INT_MIN, INT_MAX, max_depth);
+    absearch(-1 * INFINITE, INFINITE, max_depth);
 
     std::cout << "bestmove " << to_uci(best_move) << "\n";
 }

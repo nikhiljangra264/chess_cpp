@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "src/uci.h"
+#include "lib/uci.h"
 
 int main(int argc, char const* argv[])
 {

@@ -15,8 +15,7 @@ public:
 		// quite move
 		// stalemate or draw
 		// 
-
-
+		return 0;
 	}
 
 	static int evaluate(const board_t& _b)

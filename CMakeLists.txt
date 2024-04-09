@@ -1,12 +1,20 @@
-﻿# CMakeList.txt : CMake project for chess_cpp, include source and define
-# project specific logic here.
-#
+﻿cmake_minimum_required(VERSION 3.16)
 
-# Add source to this project's executable.
-add_executable (chess_cpp "chess_cpp.cpp" "chess_cpp.h" "src/board.cpp" "src/board.h" "src/engine.cpp" "src/engine.h" "src/evaluate.cpp" "src/evaluate.h" "src/header.h" "src/limit.h" "src/psqt.h" "src/uci.cpp" "src/uci.h")
+project(chess_cpp
+        VERSION 0.0.1
+        DESCRIPTION "A Tiny UCI Chess Engine"
+        LANGUAGES CXX)
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET chess_cpp PROPERTY CXX_STANDARD 20)
-endif()
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    # Specify the commit you depend on and update it regularly.
+    URL https://github.com/google/googletest/archive/5376968f6948923e2411081fd9372e71a59d8e77.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
-# TODO: Add tests and install targets if needed.
+include(CTest)
+# add_subdirectory(external)
+add_subdirectory(src)

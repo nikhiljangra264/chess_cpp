@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <limits>
+#include <climits>
 #include <array>
 
 
@@ -105,3 +106,6 @@ constexpr std::array<std::array<s8, 2>, 8> ALL_DIRECTIONS{ {
 
 constexpr size_t BOARD_SIZE = sizeof(STARTING_POSITION);
 static square_t INVALID_SQ{ 15, 15 };
+
+
+constexpr int INFINITE = std::numeric_limits<int>::max();
