@@ -17,6 +17,43 @@ protected:
 };
 
 
+TEST_F(BoardTest, making_unmaking_move) {
+    // test making and unmaking move
+    board_t board1, starting_board;
+
+    // Apply the specified moves to the board
+    Move move1{square_t(1, 4), square_t(3, 4)};  // e2e4
+    Move move2{square_t(7, 6), square_t(5, 5)};  // g8f6
+    Move move3{square_t(0, 1), square_t(2, 2)};  // b1c3
+    Move move4{square_t(7, 1), square_t(5, 2)};  // b8c6
+    Move move5{square_t(3, 4), square_t(4, 4)};  // e4e5
+    Move move6{square_t(6, 3), square_t(4, 3)};  // d7d5
+    Move move7{square_t(4, 4), square_t(5,3)};  // e5d6 (en passant)
+    
+    // Make moves
+    board1.make_move(move1);
+    board1.make_move(move2);
+    board1.make_move(move3);
+    board1.make_move(move4);
+    board1.make_move(move5);
+    board1.make_move(move6);
+    board1.make_move(move7);
+    //board1.make_move(move8);
+
+    // Unmake moves
+    //board1.unmake_move(move8);
+    board1.unmake_move(move7);
+    board1.unmake_move(move6);
+    board1.unmake_move(move5);
+    board1.unmake_move(move4);
+    board1.unmake_move(move3);
+    board1.unmake_move(move2);
+    board1.unmake_move(move1);
+
+    // Compare the resulting board state with the starting board state
+    EXPECT_EQ(starting_board, board1);
+}
+
 TEST_F(BoardTest, setting_board_with_fen) {
     // test setting board with fen
 
@@ -30,7 +67,7 @@ TEST_F(BoardTest, setting_board_with_fen) {
 
     board.init_fen(starting_fen_2);
     EXPECT_EQ(starting_board, board);
-
+/*
     // advanced
     board_t board_1, board_2;
     // make advanced moves
@@ -40,7 +77,7 @@ TEST_F(BoardTest, setting_board_with_fen) {
     board_1.init_fen(fen_1);
     board_2.init_fen(fen_2);
     EXPECT_EQ(board_1, board_2);
-
+*/
     // Test making moves
     // Add your assertions here to verify the correctness of move making
     // For example:

@@ -613,6 +613,7 @@ void board_t::fen_to_board(std::string& fen)
 Move board_t::uci_to_move(const std::string& move)
 {
 	Piece promotion = EMPTY;
+	// promotion
 	if (move.size() == 5)
 	{
 		if (turn == WHITE)
@@ -653,11 +654,14 @@ Move board_t::uci_to_move(const std::string& move)
 	if (move == "0000")
 		return Move();
 
-	return Move(
-		square_t(move[1] - '1', move[0] - 'a'),
-		square_t(move[3] - '1', move[2] - 'a'),
-		EMPTY,
-		promotion);
+	square_t from{move[1] - '1', move[0] - 'a'};
+	square_t to{move[3] - '1', move[2] - 'a'};
+
+	// check for en passant
+	if(is_pawn(piece_at(from)) && from.file != to.file && !is_sq_occ(to))
+		return Move(from, to, piece_at(from.rank, to.file), false);
+
+	return Move(from, to, piece_at(to), promotion);
 }
 
 std::ostream& operator<<(std::ostream& out, const board_t& _b)
