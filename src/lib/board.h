@@ -33,10 +33,10 @@ struct castling_rights
 	void set_bking_castle_queen(bool can) { if (can) rights = rights | 4; else rights = rights & 11; }
 	void set_bking_castle_king(bool can) { if (can) rights = rights | 8; else rights = rights & 7; }
 
-	bool get_wking_castle_queen(bool can) const { return rights & 1; }
-	bool get_wking_castle_king(bool can) const { return rights & 2; }
-	bool get_bking_castle_queen(bool can) const { return rights & 4; }
-	bool get_bking_castle_king(bool can) const { return rights & 8; }
+	bool get_wking_castle_queen() const { return rights & 1; }
+	bool get_wking_castle_king() const { return rights & 2; }
+	bool get_bking_castle_queen() const { return rights & 4; }
+	bool get_bking_castle_king() const { return rights & 8; }
 
 	void revoke_castling_rights(COLOR color) {
 		if (color == WHITE)
@@ -57,6 +57,8 @@ protected:
 	square_t black_king{ 7,4 };
 
 public:
+
+	// constructors
 	board_t() : board(STARTING_POSITION) {}
 	board_t(const board_t& other) {
 		board = other.board;
@@ -69,18 +71,20 @@ public:
 	board_t(const board_t& other, Move& move) :board_t(other) { this->make_move(move); }
 	board_t(board_t&& other);
 
+	// move assignment operator
 	void operator=(board_t&& other) noexcept;
 
+	// board information
 	bool is_sq_occ(square_t sq) const { return board[sq.rank][sq.file] != EMPTY; }
 	bool is_sq_occ(u8 rank, u8 file) const { return board[rank][file] != EMPTY; }
 	Piece piece_at(square_t sq) const { return board[sq.rank][sq.file]; }
 	Piece piece_at(u8 rank, u8 file) const { return board[rank][file]; }
 	COLOR side_to_move() const { return turn; }
+	square_t get_king_sq(COLOR color) const { return (color == WHITE) ? white_king : black_king; }
 
+	// castling rights
 	castling_rights get_castling_rights() { return rights; }
 	void set_castling_rights(castling_rights _rights) { rights = _rights; }
-
-	square_t get_king_sq(COLOR color) const { return (color == WHITE) ? white_king : black_king; }
 
 	// untested
 	void make_move(Move& m);
@@ -91,24 +95,25 @@ public:
 	void unmake_move(Move& m);
 	// end untested
 
+	// generate moves
 	std::deque<Move> get_psuedo_legal_move_pawn(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_knight(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_bishop(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_rook(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_queen(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_king(square_t sq);
-
-	bool is_sq_attacked_by(square_t sq, COLOR color);
 	std::deque<square_t> sq_attacked_by(square_t sq, COLOR color);
-
 	std::deque<Move> get_psuedo_legal_moves();
+	bool is_sq_attacked_by(square_t sq, COLOR color);
 
+	// initialize board
 	void init_startpos();
 	void init_fen(std::deque<std::string>& command);
 	void fen_to_board(std::string& fen);
 	square_t uci_to_sq(std::string& move) { return square_t(move[1] - '0', move[0] - 'a'); }
-
 	Move uci_to_move(const std::string& move);
 
+	// operators
+	bool operator==(const board_t& other) const { return board == other.board && ep_square == other.ep_square && turn == other.turn && rights.rights == other.rights.rights; }
 	friend std::ostream& operator << (std::ostream& out, const board_t& _b);
 };

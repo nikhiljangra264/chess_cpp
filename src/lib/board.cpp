@@ -504,7 +504,6 @@ std::deque<Move> board_t::get_psuedo_legal_moves()
 	return moves;
 }
 
-
 void board_t::init_startpos()
 {
 	board = std::move(STARTING_POSITION);
@@ -661,7 +660,6 @@ Move board_t::uci_to_move(const std::string& move)
 		promotion);
 }
 
-
 std::ostream& operator<<(std::ostream& out, const board_t& _b)
 {
 	for (int i = 7; i >= 0; --i) {
@@ -713,3 +711,4 @@ std::ostream& operator<<(std::ostream& out, const board_t& _b)
 	}
 	return out;
 }
+
