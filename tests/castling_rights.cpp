@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "lib/board.h"
+#include "../src/lib/board.h"
 
 namespace {
     bool tt() { return true;}
