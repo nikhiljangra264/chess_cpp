@@ -44,6 +44,15 @@ TEST_F(CastlingRightsTest, set_function_test) {
     EXPECT_TRUE(rights.get_bking_castle_queen());
     EXPECT_TRUE(rights.get_bking_castle_king());
 
+    // set by string
+    std::string s1 = "KQkq";
+    castling_rights rights_1(0);
+
+    rights.set_castling_rights(s1);
+    EXPECT_TRUE(rights.get_wking_castle_queen());
+    EXPECT_TRUE(rights.get_wking_castle_king());
+    EXPECT_TRUE(rights.get_bking_castle_queen());
+    EXPECT_TRUE(rights.get_bking_castle_king());
 }
 
 TEST_F(CastlingRightsTest, revoke_function_test)

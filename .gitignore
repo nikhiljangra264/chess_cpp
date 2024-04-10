@@ -400,3 +400,6 @@ FodyWeavers.xsd
 #vscode
 .vscode
 build
+# for debugging
+test.cpp
+a.out
