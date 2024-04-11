@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-constexpr uint16_t MAX_DEPTH = 5;
+constexpr uint16_t MAX_DEPTH = 1;
 
 struct
 {

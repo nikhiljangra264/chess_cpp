@@ -3,6 +3,7 @@
 #include <utility>
 #include <string>
 #include <stack>
+#include <algorithm>
 
 #include "board.h"
 #include "evaluate.h"

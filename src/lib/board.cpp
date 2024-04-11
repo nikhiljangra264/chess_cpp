@@ -421,8 +421,8 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 			// check if square is occupied
 			if (is_sq_occ(to))
 			{
-				// if different color queen and rook
-				if (piece_color(piece_at(to)) != color && (is_queen(piece_at(to)) || is_rook(piece_at(to))))
+				// if same color queen and rook
+				if (piece_color(piece_at(to)) == color && (is_queen(piece_at(to)) || is_rook(piece_at(to))))
 					squares.push_back(to);
 				break;
 			}
@@ -441,7 +441,7 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 			if (is_sq_occ(to))
 			{
 				// if different color bishop queen
-				if (piece_color(piece_at(to)) != color && (is_queen(piece_at(to)) || is_bishop(piece_at(to))))
+				if (piece_color(piece_at(to)) == color && (is_queen(piece_at(to)) || is_bishop(piece_at(to))))
 					squares.push_back(to);
 				break;
 			}
@@ -453,15 +453,15 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
 		to = {sq.rank + dir[0], sq.file + dir[1]};
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color && is_knight(piece_at(to)))
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_knight(piece_at(to)))
 			squares.push_back(to);
 	}
 	// check for pawn
 	to = {sq.rank - color, sq.file + 1};
-	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color && is_pawn(piece_at(to)))
+	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		squares.push_back(to);
 	to.file -= 2;
-	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color && is_pawn(piece_at(to)))
+	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		squares.push_back(to);
 
 	return squares;
