@@ -1,6 +1,6 @@
 #include "board.h"
 
-board_t::board_t(board_t&& other)
+board_t::board_t(board_t &&other)
 {
 	board = std::move(other.board);
 	turn = other.turn;
@@ -10,7 +10,7 @@ board_t::board_t(board_t&& other)
 	black_king = other.black_king;
 }
 
-void board_t::operator=(board_t&& other) noexcept
+void board_t::operator=(board_t &&other) noexcept
 {
 	board = std::move(other.board);
 	turn = other.turn;
@@ -20,7 +20,7 @@ void board_t::operator=(board_t&& other) noexcept
 	black_king = other.black_king;
 }
 
-void board_t::make_move(Move& m)
+void board_t::make_move(Move &m)
 {
 	Piece moving_piece = piece_at(m.from);
 
@@ -64,7 +64,7 @@ void board_t::make_move(Move& m)
 		// en passant if attacking and there is no piece
 		if (m.from.file != m.to.file && !is_sq_occ(m.to))
 			board[m.from.rank][m.to.file] = EMPTY;
-		
+
 		// double pawn push
 		if (m.to.rank == m.from.rank + 2 * turn)
 			ep_square = m.to;
@@ -111,7 +111,7 @@ void board_t::make_move(Move& m)
 	board[m.from.rank][m.from.file] = EMPTY;
 }
 
-void board_t::unmake_move(Move& m)
+void board_t::unmake_move(Move &m)
 {
 	// the turn variable is updated
 	turn = COLOR(-1 * turn);
@@ -159,11 +159,11 @@ void board_t::unmake_move(Move& m)
 			board[m.from.rank][m.to.file] = m.capture;
 			// update the caturing pawn
 			board[m.to.rank][m.to.file] = EMPTY;
-			ep_square = { m.from.rank, m.to.file };
+			ep_square = {m.from.rank, m.to.file};
 		}
 		else
 		{
-			if(m.to.file == m.from.file + 2 * turn)
+			if (m.to.file == m.from.file + 2 * turn)
 				ep_square = m.to;
 			else
 				ep_square = INVALID_SQ;
@@ -186,13 +186,12 @@ void board_t::unmake_move(Move& m)
 		board[m.from.rank][m.from.file] = moving_piece;
 		ep_square = INVALID_SQ;
 	}
-
 }
 
 std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 {
 	std::deque<Move> moves;
-	square_t to{ sq.rank,sq.file };
+	square_t to{sq.rank, sq.file};
 
 	// promotion
 	if ((turn == WHITE && sq.rank == 6) || (turn == BLACK && sq.rank == 1))
@@ -233,7 +232,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 		}
 
 		// attack
-		to = { sq.rank + turn, sq.file + 1 };
+		to = {sq.rank + turn, sq.file + 1};
 		// if the attacking square has opposite color piece
 		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
 			moves.push_back(Move(sq, to, piece_at(to)));
@@ -244,7 +243,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 
 		// en passant
 		if (ep_square != INVALID_SQ && ep_square.rank == sq.rank && (ep_square.file == sq.file - 1 || ep_square.file == sq.file + 1))
-			moves.push_back(Move(sq, { sq.rank + turn, ep_square.file }, piece_at(ep_square)));
+			moves.push_back(Move(sq, {sq.rank + turn, ep_square.file}, piece_at(ep_square), true));
 	}
 
 	return moves;
@@ -253,9 +252,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq)
 {
 	std::deque<Move> moves;
-	for (auto& dir : KNIGHT_DIRECTIONS)
+	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
-		square_t to{ sq.rank + dir[0], sq.file + dir[1] };
+		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// if square is occ by same color piece we can't move to the sq so skip current move
 		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == turn))
 			continue;
@@ -269,9 +268,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq)
 {
 	std::deque<Move> moves;
 	// for every direction
-	for (auto& dir : BISHOP_DIRECTIONS)
+	for (auto &dir : BISHOP_DIRECTIONS)
 	{
-		square_t to{ sq.rank + dir[0], sq.file + dir[1] };
+		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
 		while (to.inbound())
 		{
@@ -297,9 +296,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq)
 {
 	std::deque<Move> moves;
 	// for every direction
-	for (auto& dir : ROOK_DIRECTIONS)
+	for (auto &dir : ROOK_DIRECTIONS)
 	{
-		square_t to{ sq.rank + dir[0], sq.file + dir[1] };
+		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
 		while (to.inbound())
 		{
@@ -332,9 +331,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq)
 {
 	std::deque<Move> moves;
-	for (auto& dir : ALL_DIRECTIONS)
+	for (auto &dir : ALL_DIRECTIONS)
 	{
-		square_t to{ sq.rank + dir[0], sq.file + dir[1] };
+		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// if square is occ by same color piece we can't move to the sq so skip current move
 		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == turn))
 			continue;
@@ -349,7 +348,7 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color)
 	square_t to;
 
 	// check for pawn
-	to = { sq.rank - color, sq.file + 1 };
+	to = {sq.rank - color, sq.file + 1};
 	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		return true;
 	to.file -= 2;
@@ -357,17 +356,17 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color)
 		return true;
 
 	// Check for knight
-	for (auto& dir : KNIGHT_DIRECTIONS)
+	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
-		to = { sq.rank + dir[0], sq.file + dir[1] };
+		to = {sq.rank + dir[0], sq.file + dir[1]};
 		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_knight(piece_at(to)))
 			return true;
 	}
 
 	// Check orthogonally for queen or rook of opposite color
-	for (auto& dir : ROOK_DIRECTIONS)
+	for (auto &dir : ROOK_DIRECTIONS)
 	{
-		to = { sq.rank + dir[0], sq.file + dir[1] };
+		to = {sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
 		while (to.inbound())
 		{
@@ -384,9 +383,9 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color)
 		}
 	}
 	// Check diagonally for queen or bihsop of opposite color
-	for (auto& dir : ROOK_DIRECTIONS)
+	for (auto &dir : ROOK_DIRECTIONS)
 	{
-		to = { sq.rank + dir[0], sq.file + dir[1] };
+		to = {sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
 		while (to.inbound())
 		{
@@ -413,9 +412,9 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 	std::deque<square_t> squares;
 	square_t to;
 	// Check orthogonally for queen or rook of opposite color
-	for (auto& dir : ROOK_DIRECTIONS)
+	for (auto &dir : ROOK_DIRECTIONS)
 	{
-		to = { sq.rank + dir[0], sq.file + dir[1] };
+		to = {sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
 		while (to.inbound())
 		{
@@ -432,9 +431,9 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 		}
 	}
 	// Check diagonally for queen or bihsop of opposite color
-	for (auto& dir : ROOK_DIRECTIONS)
+	for (auto &dir : ROOK_DIRECTIONS)
 	{
-		to = { sq.rank + dir[0], sq.file + dir[1] };
+		to = {sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
 		while (to.inbound())
 		{
@@ -451,14 +450,14 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 		}
 	}
 	// Check for knight of opposite color
-	for (auto& dir : KNIGHT_DIRECTIONS)
+	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
-		to = { sq.rank + dir[0], sq.file + dir[1] };
+		to = {sq.rank + dir[0], sq.file + dir[1]};
 		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color && is_knight(piece_at(to)))
 			squares.push_back(to);
 	}
 	// check for pawn
-	to = { sq.rank - color, sq.file + 1 };
+	to = {sq.rank - color, sq.file + 1};
 	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color && is_pawn(piece_at(to)))
 		squares.push_back(to);
 	to.file -= 2;
@@ -481,32 +480,32 @@ std::deque<Move> board_t::get_psuedo_legal_moves()
 				continue;
 			else if (is_pawn(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_pawn({ rank, file });
+				auto temp = get_psuedo_legal_move_pawn({rank, file});
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_knight(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_knight({ rank, file });
+				auto temp = get_psuedo_legal_move_knight({rank, file});
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_bishop(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_bishop({ rank, file });
+				auto temp = get_psuedo_legal_move_bishop({rank, file});
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_rook(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_rook({ rank, file });
+				auto temp = get_psuedo_legal_move_rook({rank, file});
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_queen(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_queen({ rank, file });
+				auto temp = get_psuedo_legal_move_queen({rank, file});
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else
 			{
-				auto temp = get_psuedo_legal_move_king({ rank, file });
+				auto temp = get_psuedo_legal_move_king({rank, file});
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 		}
@@ -521,11 +520,11 @@ void board_t::init_startpos()
 	turn = WHITE;
 	rights.rights = 15;
 	ep_square = INVALID_SQ;
-	white_king = { 0,4 };
-	black_king = { 7,4 };
+	white_king = {0, 4};
+	black_king = {7, 4};
 }
 
-void board_t::init_fen(std::deque<std::string>& command)
+void board_t::init_fen(std::deque<std::string> &command)
 {
 	reset();
 	int i = 1;
@@ -537,10 +536,14 @@ void board_t::init_fen(std::deque<std::string>& command)
 	else
 	{
 		i++;
-		fen_to_board(command[i++]);														// i = 2
-		turn = (command[i++] == "w") ? WHITE : BLACK;									// i = 3
-		rights.set_castling_rights(command[i++]);										// i = 4
-		ep_square = (command[i].size() > 1) ? uci_to_sq(command[i]) : INVALID_SQ; i++;	// i = 5
+		fen_to_board(command[i++]);
+		turn = (command[i++] == "w") ? WHITE : BLACK;
+		rights.set_castling_rights(command[i++]);
+
+		square_t temp = uci_to_sq(command[i]);
+		if (command[i].size() != 1)
+			temp.rank = temp.rank - turn;
+		ep_square = temp;
 		// command 6 and 7 are full move and half move count
 		i = 8;
 	}
@@ -559,70 +562,84 @@ void board_t::init_fen(std::deque<std::string>& command)
 	}
 }
 
-void board_t::fen_to_board(std::string& fen)
+void board_t::fen_to_board(std::string &fen)
 {
 	int rank = 7, file = -1;
-	for (auto& c : fen) {
-		if (c == '/') {
+	for (auto &c : fen)
+	{
+		if (c == '/')
+		{
 			rank -= 1;
 			file = -1;
 		}
-		else if (isdigit(c)) {
+		else if (isdigit(c))
+		{
 			file += c - '0';
 		}
-		else if (c == W_PAWN_SYMBOL) {
+		else if (c == W_PAWN_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = W_PAWN;
 		}
-		else if (c == B_PAWN_SYMBOL) {
+		else if (c == B_PAWN_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = B_PAWN;
 		}
-		else if (c == W_KNIGHT_SYMBOL) {
+		else if (c == W_KNIGHT_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = W_KNIGHT;
 		}
-		else if (c == B_KNIGHT_SYMBOL) {
+		else if (c == B_KNIGHT_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = B_KNIGHT;
 		}
-		else if (c == W_BISHOP_SYMBOL) {
+		else if (c == W_BISHOP_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = W_BISHOP;
 		}
-		else if (c == B_BISHOP_SYMBOL) {
+		else if (c == B_BISHOP_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = B_BISHOP;
 		}
-		else if (c == W_ROOK_SYMBOL) {
+		else if (c == W_ROOK_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = W_ROOK;
 		}
-		else if (c == B_ROOK_SYMBOL) {
+		else if (c == B_ROOK_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = B_ROOK;
 		}
-		else if (c == W_QUEEN_SYMBOL) {
+		else if (c == W_QUEEN_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = W_QUEEN;
 		}
-		else if (c == B_QUEEN_SYMBOL) {
+		else if (c == B_QUEEN_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = B_QUEEN;
 		}
-		else if (c == W_KING_SYMBOL) {
+		else if (c == W_KING_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = W_KING;
 		}
-		else if (c == B_KING_SYMBOL) {
+		else if (c == B_KING_SYMBOL)
+		{
 			file += 1;
 			board[rank][file] = B_KING;
 		}
 	}
-
 }
 
-Move board_t::uci_to_move(const std::string& move)
+Move board_t::uci_to_move(const std::string &move)
 {
 	Piece promotion = EMPTY;
 	// promotion
@@ -633,13 +650,17 @@ Move board_t::uci_to_move(const std::string& move)
 			switch (move[5])
 			{
 			case 'q':
-				promotion = W_QUEEN; break;
+				promotion = W_QUEEN;
+				break;
 			case 'n':
-				promotion = W_KNIGHT; break;
+				promotion = W_KNIGHT;
+				break;
 			case 'b':
-				promotion = W_BISHOP; break;
+				promotion = W_BISHOP;
+				break;
 			case 'r':
-				promotion = W_ROOK; break;
+				promotion = W_ROOK;
+				break;
 			default:
 				break;
 			}
@@ -649,13 +670,17 @@ Move board_t::uci_to_move(const std::string& move)
 			switch (move[5])
 			{
 			case 'q':
-				promotion = B_QUEEN; break;
+				promotion = B_QUEEN;
+				break;
 			case 'n':
-				promotion = B_KNIGHT; break;
+				promotion = B_KNIGHT;
+				break;
 			case 'b':
-				promotion = B_BISHOP; break;
+				promotion = B_BISHOP;
+				break;
 			case 'r':
-				promotion = B_ROOK; break;
+				promotion = B_ROOK;
+				break;
 			default:
 				break;
 			}
@@ -670,54 +695,57 @@ Move board_t::uci_to_move(const std::string& move)
 	square_t to{move[3] - '1', move[2] - 'a'};
 
 	// check for en passant
-	if(is_pawn(piece_at(from)) && from.file != to.file && !is_sq_occ(to))
+	if (is_pawn(piece_at(from)) && from.file != to.file && !is_sq_occ(to))
 		return Move(from, to, piece_at(from.rank, to.file), true);
 
 	return Move(from, to, piece_at(to), promotion);
 }
 
-std::ostream& operator<<(std::ostream& out, const board_t& _b)
+std::ostream &operator<<(std::ostream &out, const board_t &_b)
 {
-	for (int i = 7; i >= 0; --i) {
-		for (int j = 0; j < 8; ++j) {
-			switch (_b.board[i][j]) {
-			case  EMPTY:
+	for (int i = 7; i >= 0; --i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			switch (_b.board[i][j])
+			{
+			case EMPTY:
 				out << EMPTY_SYMBOL;
 				break;
-			case  W_PAWN:
+			case W_PAWN:
 				out << W_PAWN_SYMBOL;
 				break;
-			case  W_KNIGHT:
+			case W_KNIGHT:
 				out << W_KNIGHT_SYMBOL;
 				break;
-			case  W_BISHOP:
+			case W_BISHOP:
 				out << W_BISHOP_SYMBOL;
 				break;
-			case  W_ROOK:
+			case W_ROOK:
 				out << W_ROOK_SYMBOL;
 				break;
-			case  W_QUEEN:
+			case W_QUEEN:
 				out << W_QUEEN_SYMBOL;
 				break;
-			case  W_KING:
+			case W_KING:
 				out << W_KING_SYMBOL;
 				break;
-			case  B_PAWN:
+			case B_PAWN:
 				out << B_PAWN_SYMBOL;
 				break;
-			case  B_KNIGHT:
+			case B_KNIGHT:
 				out << B_KNIGHT_SYMBOL;
 				break;
-			case  B_BISHOP:
+			case B_BISHOP:
 				out << B_BISHOP_SYMBOL;
 				break;
-			case  B_ROOK:
+			case B_ROOK:
 				out << B_ROOK_SYMBOL;
 				break;
-			case  B_QUEEN:
+			case B_QUEEN:
 				out << B_QUEEN_SYMBOL;
 				break;
-			case  B_KING:
+			case B_KING:
 				out << B_KING_SYMBOL;
 				break;
 			}
@@ -727,4 +755,3 @@ std::ostream& operator<<(std::ostream& out, const board_t& _b)
 	}
 	return out;
 }
-

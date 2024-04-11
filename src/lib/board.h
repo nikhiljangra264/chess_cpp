@@ -14,6 +14,7 @@ struct Move
 	u8 promotion_or_enpassant = false;
 	Piece capture = EMPTY;
 
+	bool operator==(const Move& m) { return from == m.from && to == m.to && promotion_or_enpassant == m.promotion_or_enpassant && capture == m.capture; };
 	Move() = default;
 	Move(square_t _from, square_t _to, Piece _capt = Piece::EMPTY, u8 _promo = false) :from(_from), to(_to), promotion_or_enpassant(_promo), capture(_capt) {}
 };
@@ -95,14 +96,12 @@ public:
 	castling_rights get_castling_rights() { return rights; }
 	void set_castling_rights(castling_rights _rights) { rights = _rights; }
 
-	// untested
 	void make_move(Move& m);
 	void make_null_move() {
 		turn = COLOR(turn * -1);
 		ep_square = INVALID_SQ;
 	}
 	void unmake_move(Move& m);
-	// end untested
 
 	// generate moves
 	std::deque<Move> get_psuedo_legal_move_pawn(square_t sq);
@@ -122,7 +121,7 @@ public:
 	void init_startpos();
 	void init_fen(std::deque<std::string>& command);
 	void fen_to_board(std::string& fen);
-	square_t uci_to_sq(std::string& move) { return square_t(move[1] - '0', move[0] - 'a'); }
+	square_t uci_to_sq(std::string& move) { return (move.size()!=2)?INVALID_SQ:square_t(move[1] - '1', move[0] - 'a'); }
 	Move uci_to_move(const std::string& move);
 
 	// operators
