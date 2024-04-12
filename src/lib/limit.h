@@ -2,9 +2,10 @@
 
 #include <stdint.h>
 
-constexpr uint16_t MAX_DEPTH = 1;
+constexpr uint16_t MAX_DEPTH = 5;
 
-struct
+static struct
 {
 	uint16_t max_depth = MAX_DEPTH;
+	uint16_t max_nodes = -1;
 }limit;

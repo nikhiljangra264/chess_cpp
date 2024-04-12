@@ -73,6 +73,15 @@ void UCI::processCommand(const std::string& input) {
         std::cout << board << std::endl;
     }
     else if (command[0] == "go") {
+        for (int index = 1; index < command.size(); index++)
+        {
+            if (command[index] == "depth")
+                engine.max_depth = std::stoi(command[index++ + 1]);
+            else if (command[index] == "nodes")
+                engine.max_nodes = std::stoi(command[index++ + 1]);
+        }
+
+        engine.stop = false;
 
         if (thread && thread->joinable()) {
             thread->join();

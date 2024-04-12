@@ -11,7 +11,7 @@
 int main(int argc, char const* argv[])
 {
     // uci instance
-    UCI game = UCI();
+    UCI game;
     std::string line;
 
     for (int i = 1; i < argc; i++) {

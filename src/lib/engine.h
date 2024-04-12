@@ -14,9 +14,11 @@ class Engine
 private:
 	board_t& board;
 	Move best_move;
-	u16 max_depth = limit.max_depth;
+	u16 nodes = 0;
 
 public:
+	u16 max_depth = limit.max_depth;
+	u16 max_nodes = limit.max_nodes;
 	bool stop = false;
 
 	Engine(board_t& _board) :board(_board) {}
@@ -26,5 +28,9 @@ public:
 
 	std::string to_uci(Move& m);
 
-	void reset() {}
+	void reset() {
+		best_move = Move();
+		max_depth = MAX_DEPTH;
+		max_nodes = -1;
+	}
 };

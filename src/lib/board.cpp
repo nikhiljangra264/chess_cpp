@@ -98,7 +98,8 @@ void board_t::make_move(Move &m)
 					rights.set_bking_castle_king(false);
 			}
 		}
-		ep_square = INVALID_SQ;
+		board[m.to.rank][m.to.file] = moving_piece;
+ 		ep_square = INVALID_SQ;
 	}
 	else
 	{
@@ -383,7 +384,7 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color)
 		}
 	}
 	// Check diagonally for queen or bihsop of opposite color
-	for (auto &dir : ROOK_DIRECTIONS)
+	for (auto &dir : BISHOP_DIRECTIONS)
 	{
 		to = {sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
@@ -431,7 +432,7 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
 		}
 	}
 	// Check diagonally for queen or bihsop of opposite color
-	for (auto &dir : ROOK_DIRECTIONS)
+	for (auto &dir : BISHOP_DIRECTIONS)
 	{
 		to = {sq.rank + dir[0], sq.file + dir[1]};
 		// while the sq is valid
@@ -516,7 +517,7 @@ std::deque<Move> board_t::get_psuedo_legal_moves()
 
 void board_t::init_startpos()
 {
-	board = std::move(STARTING_POSITION);
+	board = STARTING_POSITION;
 	turn = WHITE;
 	rights.rights = 15;
 	ep_square = INVALID_SQ;

@@ -43,13 +43,12 @@ bool areDequesEqual(const std::deque<Move>& deque1, const std::deque<Move>& dequ
 }
 
 
-TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest)
+TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_1)
 {
     board_t board;
     std::deque<std::string> fen = {"position","fen","r3kb1r/1pp2p1p/2nq1n2/1B1pp1pP/p2PPBb1/2N2N2/PPP2PP1/R2QK2R","w","KQkq","g6","0","4"};
     board.init_fen(fen);
 
-    // Moves at this position
     // Moves at this position
     std::deque<Move> actual_moves = {
         // A1 rook
@@ -109,6 +108,59 @@ TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest)
         // pawn on 5th rank
         Move({4,7},{5,6},B_PAWN, true),
         Move({4,7},{5,7})
+    };
+
+
+    std::deque<Move> generated_moves = board.get_psuedo_legal_moves();
+
+    EXPECT_TRUE(areDequesEqual(actual_moves, generated_moves));
+}
+
+
+TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_2)
+{
+    board_t board;
+    std::deque<std::string> fen = { "position","fen","r1bqkb1r/ppp2ppp/2n5/1B1pp3/8/2N2N2/PPPP1PPP/R1BQK2R","b","KQkq","-","0","4" };
+    board.init_fen(fen);
+
+    // Moves at this position
+    std::deque<Move> actual_moves = {
+        Move({7,0},{7,1}),
+        Move({7,2},{6,3}),
+        Move({7,2},{5,4}),
+        Move({7,2},{4,5}),
+        Move({7,2},{3,6}),
+        Move({7,2},{2,7}),
+        Move({7,3},{6,3}),
+        Move({7,3},{5,3}),
+        Move({7,3},{6,4}),
+        Move({7,3},{5,5}),
+        Move({7,3},{4,6}),
+        Move({7,3},{3,7}),
+        Move({7,4},{6,4}),
+        Move({7,4},{6,3}),
+        Move({7,5},{6,4}),
+        Move({7,5},{5,3}),
+        Move({7,5},{4,2}),
+        Move({7,5},{3,1}),
+        Move({7,5},{2,0}),
+        Move({7,7},{7,6}),
+        Move({6,0},{5,0}),
+        Move({6,0},{4,0}),
+        Move({6,1},{5,1}),
+        Move({6,5},{5,5}),
+        Move({6,5},{4,5}),
+        Move({6,6},{5,6}),
+        Move({6,6},{4,6}),
+        Move({6,7},{5,7}),
+        Move({6,7},{4,7}),
+        Move({5,2},{4,0}),
+        Move({5,2},{3,1}),
+        Move({5,2},{3,3}),
+        Move({5,2},{6,4}),
+        Move({5,2},{7,1}),
+        Move({4,3},{3,3}),
+        Move({4,4},{3,4})
     };
 
 
