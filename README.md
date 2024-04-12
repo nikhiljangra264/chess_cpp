@@ -1,4 +1,6 @@
-# chess_cpp
+<h1 align="center">chess_cpp</h1>
+
+[![CMake on multiple platforms](https://github.com/nikhiljangra264/chess_cpp/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/nikhiljangra264/chess_cpp/actions/workflows/cmake-multi-platform.yml)
 
 chess_cpp is a free and simple UCI chess engine.
 
