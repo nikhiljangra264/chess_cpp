@@ -1,4 +1,4 @@
-# Chess Engine in C++
+# chess_cpp
 
 chess_cpp is a free and simple UCI chess engine.
 
