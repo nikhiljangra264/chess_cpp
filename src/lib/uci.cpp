@@ -73,12 +73,19 @@ void UCI::processCommand(const std::string& input) {
         std::cout << board << std::endl;
     }
     else if (command[0] == "go") {
+        engine.reset();
         for (int index = 1; index < command.size(); index++)
         {
             if (command[index] == "depth")
                 engine.max_depth = std::stoi(command[index++ + 1]);
             else if (command[index] == "nodes")
                 engine.max_nodes = std::stoi(command[index++ + 1]);
+            else if (command[index] == "movetime")
+                engine.max_time = std::stoi(command[index++ + 1]);
+            else if (command[index] == "wtime" && board.side_to_move() == WHITE)
+                engine.max_time = std::stoi(command[index++ + 1]);
+            else if (command[index] == "btime" && board.side_to_move() == BLACK)
+                engine.max_time = std::stoi(command[index++ + 1]);
         }
 
         engine.stop = false;

@@ -4,12 +4,12 @@
 
 #include <stdint.h>
 #include <limits>
-#include <climits>
 #include <array>
 
 
 using u64 = uint64_t;
 using u8 = uint8_t;
+using u32 = uint32_t;
 using u16 = uint16_t;
 using s8 = char;
 
@@ -117,6 +117,10 @@ constexpr std::array<std::array<s8, 2>, 8> ALL_DIRECTIONS{ {
 
 constexpr size_t BOARD_SIZE = sizeof(STARTING_POSITION);
 static square_t INVALID_SQ{ 15, 15 };
+
+constexpr uint16_t MAX_DEPTH = 10;
+constexpr uint64_t MAX_TIME = -1;
+constexpr uint16_t MAX_NODES = -1;
 
 constexpr int CHECKMATE_VALUE = 1000000;
 constexpr int STALEMATE_VALUE = -1000;

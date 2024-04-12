@@ -4,8 +4,11 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 {
 	// increase node traveled
 	nodes++;
-	if (nodes > max_nodes)
+	if (nodes > max_nodes || is_time_up())
+	{
 		stop = true;
+		return (board.side_to_move() == WHITE) ? -INFINITE : INFINITE;
+	}
 	
 	// Base case: if depth is 0 return evaluation
 	if (depth == 0) {
@@ -94,6 +97,8 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 
 void Engine::search()
 {
+	start_time = std::chrono::steady_clock::now();
+
 	absearch(-INFINITE, INFINITE, max_depth);
 
 	std::cout << "bestmove " << to_uci(best_move) << "\n";

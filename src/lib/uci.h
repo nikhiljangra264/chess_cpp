@@ -4,7 +4,6 @@
 
 // External
 #include <thread>
-#include <fstream>
 #include <vector>
 
 // Internal

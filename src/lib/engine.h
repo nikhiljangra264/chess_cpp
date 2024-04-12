@@ -1,13 +1,12 @@
 #pragma once
 
-#include <utility>
+// #include <utility>
 #include <string>
-#include <stack>
 #include <algorithm>
+#include <chrono>
 
 #include "board.h"
 #include "evaluate.h"
-#include "limit.h"
 
 class Engine
 {
@@ -15,10 +14,12 @@ private:
 	board_t& board;
 	Move best_move;
 	u16 nodes = 0;
+	std::chrono::time_point<std::chrono::steady_clock> start_time;
 
 public:
-	u16 max_depth = limit.max_depth;
-	u16 max_nodes = limit.max_nodes;
+	u16 max_depth = MAX_DEPTH;
+	u16 max_nodes = MAX_NODES;
+	u64 max_time = MAX_TIME;
 	bool stop = false;
 
 	Engine(board_t& _board) :board(_board) {}
@@ -28,9 +29,15 @@ public:
 
 	std::string to_uci(Move& m);
 
+	bool is_time_up() const
+	{
+		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() >= max_time;
+	}
+
 	void reset() {
 		best_move = Move();
 		max_depth = MAX_DEPTH;
-		max_nodes = -1;
+		max_nodes = MAX_NODES;
+		max_time = MAX_TIME;
 	}
 };

@@ -78,7 +78,7 @@ public:
 		black_king = other.black_king;
 	}
 	board_t(const board_t& other, Move& move) :board_t(other) { this->make_move(move); }
-	board_t(board_t&& other);
+	board_t(board_t&& other) noexcept;
 
 	// move assignment operator
 	void operator=(board_t&& other) noexcept;
@@ -93,7 +93,7 @@ public:
 	square_t get_ep_square() const { return ep_square; }
 
 	// castling rights
-	castling_rights get_castling_rights() { return rights; }
+	castling_rights get_castling_rights() const { return rights; }
 	void set_castling_rights(castling_rights _rights) { rights = _rights; }
 
 	void make_move(Move& m);
@@ -105,14 +105,14 @@ public:
 
 	// generate moves
 	std::deque<Move> get_psuedo_legal_move_pawn(square_t sq);
-	std::deque<Move> get_psuedo_legal_move_knight(square_t sq);
-	std::deque<Move> get_psuedo_legal_move_bishop(square_t sq);
-	std::deque<Move> get_psuedo_legal_move_rook(square_t sq);
+	std::deque<Move> get_psuedo_legal_move_knight(square_t sq) const;
+	std::deque<Move> get_psuedo_legal_move_bishop(square_t sq) const;
+	std::deque<Move> get_psuedo_legal_move_rook(square_t sq) const;
 	std::deque<Move> get_psuedo_legal_move_queen(square_t sq);
-	std::deque<Move> get_psuedo_legal_move_king(square_t sq);
-	std::deque<square_t> sq_attacked_by(square_t sq, COLOR color);
+	std::deque<Move> get_psuedo_legal_move_king(square_t sq) const;
+	std::deque<square_t> sq_attacked_by(square_t sq, COLOR color) const;
 	std::deque<Move> get_psuedo_legal_moves();
-	bool is_sq_attacked_by(square_t sq, COLOR color);
+	bool is_sq_attacked_by(square_t sq, COLOR color) const;
 
 	// initialize board
 	void reset() {
@@ -122,7 +122,7 @@ public:
 	void init_fen(std::deque<std::string>& command);
 	void fen_to_board(std::string& fen);
 	square_t uci_to_sq(std::string& move) { return (move.size()!=2)?INVALID_SQ:square_t(move[1] - '1', move[0] - 'a'); }
-	Move uci_to_move(const std::string& move);
+	Move uci_to_move(const std::string& move) const;
 
 	// operators
 	bool operator==(const board_t& other) const { return board == other.board && ep_square == other.ep_square && turn == other.turn && rights.rights == other.rights.rights; }

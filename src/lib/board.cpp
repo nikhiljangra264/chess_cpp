@@ -1,6 +1,6 @@
 #include "board.h"
 
-board_t::board_t(board_t &&other)
+board_t::board_t(board_t &&other) noexcept
 {
 	board = std::move(other.board);
 	turn = other.turn;
@@ -250,7 +250,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq)
+std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 {
 	std::deque<Move> moves;
 	for (auto &dir : KNIGHT_DIRECTIONS)
@@ -265,7 +265,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq)
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq)
+std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 {
 	std::deque<Move> moves;
 	// for every direction
@@ -293,7 +293,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq)
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq)
+std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 {
 	std::deque<Move> moves;
 	// for every direction
@@ -329,7 +329,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq)
 	return rook_moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq)
+std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 {
 	std::deque<Move> moves;
 	for (auto &dir : ALL_DIRECTIONS)
@@ -344,7 +344,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq)
 	return moves;
 }
 
-bool board_t::is_sq_attacked_by(square_t sq, COLOR color)
+bool board_t::is_sq_attacked_by(square_t sq, COLOR color) const
 {
 	square_t to;
 
@@ -408,7 +408,7 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color)
 	return false;
 }
 
-std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color)
+std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color) const
 {
 	std::deque<square_t> squares;
 	square_t to;
@@ -640,7 +640,7 @@ void board_t::fen_to_board(std::string &fen)
 	}
 }
 
-Move board_t::uci_to_move(const std::string &move)
+Move board_t::uci_to_move(const std::string &move) const
 {
 	Piece promotion = EMPTY;
 	// promotion
