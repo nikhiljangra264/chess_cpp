@@ -123,5 +123,5 @@ constexpr uint64_t MAX_TIME = -1;
 constexpr uint16_t MAX_NODES = -1;
 
 constexpr int CHECKMATE_VALUE = 1000000;
-constexpr int STALEMATE_VALUE = -1000;
+constexpr int STALEMATE_VALUE = -500;
 constexpr int INFINITE = std::numeric_limits<int>::max();

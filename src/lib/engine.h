@@ -29,11 +29,28 @@ public:
 
 	std::string to_uci(Move& m);
 
-	bool is_time_up() const
+	u64 time() const
 	{
-		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count() >= max_time;
+		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
 	}
 
+	bool is_time_up() const
+	{
+		return  time()  >= max_time;
+	}
+/*
+	void print_stats()
+	{
+		std::cout << "info";
+		std::cout << " depth " << max_depth;
+		std::cout << " nodes " << nodes;
+		std::cout << " nps " << (nodes / time());
+		std::cout << " time " << time() << "ms";
+		std::cout << " pv " << to_uci(best_move);
+		std::cout << std::endl;
+		std::cout.flush();
+	}
+*/
 	void reset() {
 		best_move = Move();
 		max_depth = MAX_DEPTH;

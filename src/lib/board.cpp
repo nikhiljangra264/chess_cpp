@@ -8,6 +8,7 @@ board_t::board_t(board_t &&other) noexcept
 	ep_square = other.ep_square;
 	white_king = other.white_king;
 	black_king = other.black_king;
+	halfmove_count = other.halfmove_count;
 }
 
 void board_t::operator=(board_t &&other) noexcept
@@ -18,11 +19,14 @@ void board_t::operator=(board_t &&other) noexcept
 	ep_square = other.ep_square;
 	white_king = other.white_king;
 	black_king = other.black_king;
+	halfmove_count = other.halfmove_count;
 }
 
 void board_t::make_move(Move &m)
 {
 	Piece moving_piece = piece_at(m.from);
+	if (m.capture != EMPTY || m.promotion_or_enpassant)
+		halfmove_count = 0;
 
 	// king moves
 	if (is_king(moving_piece))
@@ -52,6 +56,7 @@ void board_t::make_move(Move &m)
 				board[m.to.rank][7] = EMPTY;
 				board[m.to.rank][5] = (turn == WHITE) ? W_ROOK : B_ROOK;
 			}
+			halfmove_count = 0;
 		}
 
 		board[m.to.rank][m.to.file] = moving_piece;
@@ -61,6 +66,7 @@ void board_t::make_move(Move &m)
 	// pawn moves
 	else if (is_pawn(moving_piece))
 	{
+		halfmove_count = 0;
 		// en passant if attacking and there is no piece
 		if (m.from.file != m.to.file && !is_sq_occ(m.to))
 			board[m.from.rank][m.to.file] = EMPTY;
@@ -109,6 +115,7 @@ void board_t::make_move(Move &m)
 
 	// change turn
 	turn = COLOR(-turn);
+	halfmove_count++;
 	board[m.from.rank][m.from.file] = EMPTY;
 }
 
@@ -545,7 +552,8 @@ void board_t::init_fen(std::deque<std::string> &command)
 		if (command[i].size() != 1)
 			temp.rank = temp.rank - turn;
 		ep_square = temp;
-		// command 6 and 7 are full move and half move count
+		halfmove_count = std::stoi(command[++i]);
+		// 7 is full move count
 		i = 8;
 	}
 

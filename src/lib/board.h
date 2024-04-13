@@ -15,9 +15,12 @@ struct Move
 	Piece capture = EMPTY;
 
 	bool operator==(const Move& m) { return from == m.from && to == m.to && promotion_or_enpassant == m.promotion_or_enpassant && capture == m.capture; };
+	bool operator!=(const Move& m) { return from != m.from || to != m.to || promotion_or_enpassant != m.promotion_or_enpassant || capture != m.capture; };
 	Move() = default;
 	Move(square_t _from, square_t _to, Piece _capt = Piece::EMPTY, u8 _promo = false) :from(_from), to(_to), promotion_or_enpassant(_promo), capture(_capt) {}
 };
+
+static Move NULL_MOVE;
 
 /// <summary>
 /// 0000KQkq
@@ -66,6 +69,7 @@ protected:
 	square_t black_king{ 7,4 };
 
 public:
+	u8 halfmove_count = 0;
 
 	// constructors
 	board_t() : board(STARTING_POSITION) {}
@@ -76,6 +80,7 @@ public:
 		ep_square = other.ep_square;
 		white_king = other.white_king;
 		black_king = other.black_king;
+		halfmove_count = other.halfmove_count;
 	}
 	board_t(const board_t& other, Move& move) :board_t(other) { this->make_move(move); }
 	board_t(board_t&& other) noexcept;
