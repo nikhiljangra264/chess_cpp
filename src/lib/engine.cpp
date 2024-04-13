@@ -138,3 +138,36 @@ std::string Engine::to_uci(Move& m)
 	}
 	return uci_format;
 }
+
+bool Engine::is_move_legal(Move& m, COLOR move_maker)
+{
+	COLOR opposite = (move_maker == WHITE) ? BLACK : WHITE;
+	// if king castling
+	if (is_king(board.piece_at(m.to)))
+	{
+		// queen side castling
+		if (m.to.file == m.from.file - 2)
+		{
+			// check d1 c1 square
+			if (board.is_sq_occ({ m.from.rank,3 }) ||
+				board.is_sq_occ({ m.from.rank,2 }) ||
+				board.is_sq_attacked_by({ m.from.rank,3 }, opposite) ||
+				board.is_sq_attacked_by({ m.from.rank,2 }, opposite))
+				return false;
+			return true;
+		}
+		// king side castling
+		if (m.from.file == m.to.file + 2)
+		{
+			// check f1 g1 square
+			if (board.is_sq_occ({ m.from.rank,5 }) ||
+				board.is_sq_occ({ m.from.rank,6 }) ||
+				board.is_sq_attacked_by({ m.from.rank,5 }, opposite) ||
+				board.is_sq_attacked_by({ m.from.rank,6 }, opposite))
+				return false;
+			return true;
+		}
+	}
+	// not than simply check if the king in check
+	return !board.is_sq_attacked_by(board.get_king_sq(move_maker), opposite);
+}

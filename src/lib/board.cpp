@@ -330,6 +330,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 {
 	std::deque<Move> moves;
+	// simple moves
 	for (auto &dir : ALL_DIRECTIONS)
 	{
 		square_t to{sq.rank + dir[0], sq.file + dir[1]};
@@ -338,6 +339,21 @@ std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 			continue;
 
 		moves.push_back(Move(sq, to, piece_at(to)));
+	}
+	// castling moves
+	if (turn == WHITE)
+	{
+		if (board_state.get_wking_castle_queen())
+			moves.push_back(Move(sq, { 0,2 }));
+		if (board_state.get_wking_castle_king())
+			moves.push_back(Move(sq, { 0,6 }));
+	}
+	else
+	{
+		if (board_state.get_bking_castle_queen())
+			moves.push_back(Move(sq, { 7,2 }));
+		if (board_state.get_bking_castle_king())
+			moves.push_back(Move(sq, { 7,6 }));
 	}
 	return moves;
 }

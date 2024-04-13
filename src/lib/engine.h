@@ -29,6 +29,8 @@ public:
 
 	std::string to_uci(Move& m);
 
+	bool is_move_legal(Move& m, COLOR move_maker);
+
 	u64 time() const
 	{
 		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
