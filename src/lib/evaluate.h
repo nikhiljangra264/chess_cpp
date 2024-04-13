@@ -8,7 +8,10 @@ class eval
 	static int __evaluate(const board_t& _b, COLOR side);
 
 public:
-	static int score_move(board_t& board, Move& move);
+	static int score_move(Move& move)
+	{
+		return move.capture + move.promotion_or_enpassant;
+	}
 	
 	static int evaluate(const board_t& _b)
 	{

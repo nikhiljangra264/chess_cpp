@@ -42,26 +42,3 @@ int eval::__evaluate(const board_t& _b, COLOR side)
 
 	return calc;
 }
-
-int eval::score_move(board_t &board, Move &move)
-{
-	int cal = 0;
-
-	// captures
-	if(move.capture != EMPTY)
-	{
-		u8 capturing = board.piece_at(move.from), captured = move.capture;
-		if(board.side_to_move() == WHITE) capturing -= 2;
-		else captured -= 2;
-		// prefer lvp-hvp
-		if(captured > capturing)
-			cal += (captured-capturing);
-		else
-			cal+=1;
-	}
-	// promotion
-	if(move.promotion_or_enpassant > 7)
-		cal += move.promotion_or_enpassant;
-
-	return cal;
-}

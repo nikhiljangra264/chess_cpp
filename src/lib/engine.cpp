@@ -25,8 +25,8 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 	// sort the moves
 	std::sort(moves.begin(),
 		moves.end(),
-		[this](Move& a, Move& b) {
-			return eval::score_move(this->board, a) > eval::score_move(this->board, b);
+		[](Move& a, Move& b) {
+			return eval::score_move(a) > eval::score_move(b);
 		});
 
 	// traverse the moves
@@ -46,7 +46,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 				is_make_any_move = true;
 				int score = absearch(alpha, beta, depth - 1);
 
-				if (max_score <= score)
+				if (max_score < score)
 				{
 					max_score = score;
 					if (depth == max_depth) best_move = move;
@@ -64,7 +64,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 				is_make_any_move = true;
 				int score = absearch(alpha, beta, depth - 1);
 
-				if (max_score >= score)
+				if (max_score > score)
 				{
 					max_score = score;
 					if (depth == max_depth) best_move = move;
@@ -86,10 +86,10 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 		// check for checkmate and stalemate
 		if (board.is_sq_attacked_by(board.get_king_sq(board.side_to_move()), (maximizing_player) ? BLACK : WHITE))
 			// in check
-			max_score = maximizing_player ? CHECKMATE_VALUE : -CHECKMATE_VALUE;
+			max_score = (maximizing_player ? -CHECKMATE_VALUE : +CHECKMATE_VALUE) * depth;
 		else
 			// stalemate
-			max_score = STALEMATE_VALUE;
+			max_score = maximizing_player ? -STALEMATE_VALUE : STALEMATE_VALUE;
 	}
 	return max_score;
 }
