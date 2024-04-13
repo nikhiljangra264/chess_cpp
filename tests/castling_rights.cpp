@@ -17,7 +17,7 @@ protected:
 };
 
 TEST_F(CastlingRightsTest, set_function_test) {
-    castling_rights rights(0);
+    board_state_t rights(0);
 
     // Test setting and getting castling rights
     rights.set_wking_castle_queen(true);
@@ -46,7 +46,7 @@ TEST_F(CastlingRightsTest, set_function_test) {
 
     // set by string
     std::string s1 = "KQkq";
-    castling_rights rights_1(0);
+    board_state_t rights_1(0);
 
     rights.set_castling_rights(s1);
     EXPECT_TRUE(rights.get_wking_castle_queen());
@@ -57,7 +57,7 @@ TEST_F(CastlingRightsTest, set_function_test) {
 
 TEST_F(CastlingRightsTest, revoke_function_test)
 {
-    castling_rights rights;
+    board_state_t rights;
     // Test revoking castling rights
     rights.revoke_castling_rights(WHITE);
     EXPECT_FALSE(rights.get_wking_castle_queen());

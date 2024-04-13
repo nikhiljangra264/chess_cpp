@@ -64,9 +64,9 @@ TEST_F(BoardTest, make_unmake_moves) {
     board_make.make_move(move18);
     board_make.make_move(move19);
 
-    std::cout << board_make;
+    std::cout << board_make.board_state.halfmove_count;
 
-    std::deque<std::string> fen = {"position","fen","k2r1Q1r/ppp1pp1p/2nq4/8/8/2N5/PPPP1P1P/R1BQKb1R","b","KQ--","-","0","4"};
+    std::deque<std::string> fen = {"position","fen","k2r1Q1r/ppp1pp1p/2nq4/8/8/2N5/PPPP1P1P/R1BQKb1R","b","KQ--","-","1","4"};
     final_position.init_fen(fen);
 
     EXPECT_EQ(board_make, final_position);
@@ -93,7 +93,7 @@ TEST_F(BoardTest, make_unmake_moves) {
     board_make.unmake_move(move1);
     // setting castling rights manually
     // we have to handle castling rights manually in game
-    board_make.set_castling_rights(castling_rights(15));
+    board_make.board_state = starting_position.board_state;
 
     // Compare the resulting board state with the starting board state
     EXPECT_EQ(board_make, starting_position);
@@ -112,9 +112,6 @@ TEST_F(BoardTest, setting_board_with_fen) {
 
     board.init_fen(starting_fen_2);
     EXPECT_EQ(starting_board, board);
-
-    // initialize another board
-    std::deque<std::string> fen_1 = {"position","fen","r1bqkb1r/ppp1pppp/2nP1n2/8/8/2N5/PPPP1PPP/R1BQKBNR"};
 
 /*
     // advanced

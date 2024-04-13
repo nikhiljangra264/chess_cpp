@@ -4,29 +4,28 @@ board_t::board_t(board_t &&other) noexcept
 {
 	board = std::move(other.board);
 	turn = other.turn;
-	rights = other.rights;
-	ep_square = other.ep_square;
+	board_state = other.board_state;
 	white_king = other.white_king;
 	black_king = other.black_king;
-	halfmove_count = other.halfmove_count;
 }
 
 void board_t::operator=(board_t &&other) noexcept
 {
 	board = std::move(other.board);
 	turn = other.turn;
-	rights = other.rights;
-	ep_square = other.ep_square;
+	board_state = other.board_state;
 	white_king = other.white_king;
 	black_king = other.black_king;
-	halfmove_count = other.halfmove_count;
 }
 
 void board_t::make_move(Move &m)
 {
 	Piece moving_piece = piece_at(m.from);
+	// reset halfmove count if irreversible move
 	if (m.capture != EMPTY || m.promotion_or_enpassant)
-		halfmove_count = 0;
+		board_state.halfmove_count = 0;
+	// reset en passant
+	board_state.ep_square = INVALID_SQ;
 
 	// king moves
 	if (is_king(moving_piece))
@@ -38,7 +37,7 @@ void board_t::make_move(Move &m)
 			black_king = m.to;
 
 		// revoke rights
-		rights.revoke_castling_rights(turn);
+		board_state.revoke_castling_rights(turn);
 
 		// is king is jumping more than one square than castling
 		if (abs(m.to.file - m.from.file) == 2)
@@ -56,29 +55,30 @@ void board_t::make_move(Move &m)
 				board[m.to.rank][7] = EMPTY;
 				board[m.to.rank][5] = (turn == WHITE) ? W_ROOK : B_ROOK;
 			}
-			halfmove_count = 0;
+			board_state.halfmove_count = 0;
 		}
 
 		board[m.to.rank][m.to.file] = moving_piece;
-		ep_square = INVALID_SQ;
 	}
 
 	// pawn moves
 	else if (is_pawn(moving_piece))
 	{
-		halfmove_count = 0;
+		board_state.halfmove_count = 0;
+
 		// en passant if attacking and there is no piece
 		if (m.from.file != m.to.file && !is_sq_occ(m.to))
+		{
 			board[m.from.rank][m.to.file] = EMPTY;
-
+		}
 		// double pawn push
-		if (m.to.rank == m.from.rank + 2 * turn)
-			ep_square = m.to;
-		else
-			ep_square = INVALID_SQ;
-
+		else if (m.to.rank == m.from.rank + 2 * turn)
+		{
+			board_state.ep_square = m.to;
+			board[m.to.rank][m.to.file] = moving_piece;
+		}
 		// promotion
-		if (m.to.rank == 7 || m.to.rank == 0)
+		else if (m.to.rank == 7 || m.to.rank == 0)
 			board[m.to.rank][m.to.file] = Piece(m.promotion_or_enpassant);
 		else
 			board[m.to.rank][m.to.file] = moving_piece;
@@ -87,35 +87,33 @@ void board_t::make_move(Move &m)
 	else if (is_rook(moving_piece))
 	{
 		// update castling rights
-		if (rights.rights)
+		if (board_state.rights)
 		{
 			if (turn == WHITE)
 			{
 				if (m.from.file == 0)
-					rights.set_wking_castle_queen(false);
+					board_state.set_wking_castle_queen(false);
 				else if (m.from.file == 7)
-					rights.set_wking_castle_king(false);
+					board_state.set_wking_castle_king(false);
 			}
 			else
 			{
 				if (m.from.file == 0)
-					rights.set_bking_castle_queen(false);
+					board_state.set_bking_castle_queen(false);
 				else if (m.from.file == 7)
-					rights.set_bking_castle_king(false);
+					board_state.set_bking_castle_king(false);
 			}
 		}
 		board[m.to.rank][m.to.file] = moving_piece;
- 		ep_square = INVALID_SQ;
 	}
 	else
 	{
 		board[m.to.rank][m.to.file] = moving_piece;
-		ep_square = INVALID_SQ;
 	}
 
 	// change turn
 	turn = COLOR(-turn);
-	halfmove_count++;
+	board_state.halfmove_count++;
 	board[m.from.rank][m.from.file] = EMPTY;
 }
 
@@ -151,30 +149,23 @@ void board_t::unmake_move(Move &m)
 				board[m.to.rank][7] = (turn == WHITE) ? W_ROOK : B_ROOK;
 			}
 		}
-
 		board[m.to.rank][m.to.file] = m.capture;
 		board[m.from.rank][m.from.file] = moving_piece;
-		ep_square = INVALID_SQ;
 	}
 
 	// pawn moves (no promotion moves)
 	else if (is_pawn(moving_piece))
 	{
-		// en passant if attacking and en passant variable is true
-		if (m.from.file != m.to.file && m.promotion_or_enpassant)
+		// en passant if en passant variable is true
+		if (m.promotion_or_enpassant)
 		{
 			// place catured pawn
 			board[m.from.rank][m.to.file] = m.capture;
 			// update the caturing pawn
 			board[m.to.rank][m.to.file] = EMPTY;
-			ep_square = {m.from.rank, m.to.file};
 		}
 		else
 		{
-			if (m.to.file == m.from.file + 2 * turn)
-				ep_square = m.to;
-			else
-				ep_square = INVALID_SQ;
 			board[m.to.rank][m.to.file] = m.capture;
 		}
 		board[m.from.rank][m.from.file] = moving_piece;
@@ -185,14 +176,12 @@ void board_t::unmake_move(Move &m)
 	{
 		board[m.from.rank][m.from.file] = (turn == WHITE) ? W_PAWN : B_PAWN;
 		board[m.to.rank][m.to.file] = m.capture;
-		ep_square = INVALID_SQ;
 	}
 	// other moves
 	else
 	{
 		board[m.to.rank][m.to.file] = m.capture;
 		board[m.from.rank][m.from.file] = moving_piece;
-		ep_square = INVALID_SQ;
 	}
 }
 
@@ -250,8 +239,10 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 			moves.push_back(Move(sq, to, piece_at(to)));
 
 		// en passant
-		if (ep_square != INVALID_SQ && ep_square.rank == sq.rank && (ep_square.file == sq.file - 1 || ep_square.file == sq.file + 1))
-			moves.push_back(Move(sq, {sq.rank + turn, ep_square.file}, piece_at(ep_square), true));
+		if (board_state.ep_square != INVALID_SQ && 
+			board_state.ep_square.rank == sq.rank && 
+			(board_state.ep_square.file == sq.file - 1 || board_state.ep_square.file == sq.file + 1))
+			moves.push_back(Move(sq, {sq.rank + turn, board_state.ep_square.file}, piece_at(board_state.ep_square), true));
 	}
 
 	return moves;
@@ -526,8 +517,8 @@ void board_t::init_startpos()
 {
 	board = STARTING_POSITION;
 	turn = WHITE;
-	rights.rights = 15;
-	ep_square = INVALID_SQ;
+	board_state.rights = 15;
+	board_state.ep_square = INVALID_SQ;
 	white_king = {0, 4};
 	black_king = {7, 4};
 }
@@ -546,13 +537,13 @@ void board_t::init_fen(std::deque<std::string> &command)
 		i++;
 		fen_to_board(command[i++]);
 		turn = (command[i++] == "w") ? WHITE : BLACK;
-		rights.set_castling_rights(command[i++]);
+		board_state.set_castling_rights(command[i++]);
 
 		square_t temp = uci_to_sq(command[i]);
 		if (command[i].size() != 1)
 			temp.rank = temp.rank - turn;
-		ep_square = temp;
-		halfmove_count = std::stoi(command[++i]);
+		board_state.ep_square = temp;
+		board_state.halfmove_count = std::stoi(command[++i]);
 		// 7 is full move count
 		i = 8;
 	}

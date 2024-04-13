@@ -25,12 +25,20 @@ static Move NULL_MOVE;
 /// <summary>
 /// 0000KQkq
 /// </summary>
-struct castling_rights
+struct board_state_t
 {
 	u8 rights;
+	square_t ep_square;
+	u8 halfmove_count;
 
-	castling_rights() :rights(15) {}
-	castling_rights(int _rights) :rights(_rights) {}
+	board_state_t(int _rights=15, square_t _ep_square=INVALID_SQ, int _halfmove_count=0) :rights(_rights),ep_square(_ep_square),halfmove_count(_halfmove_count) {}
+
+	bool operator==(const board_state_t& other) const { return rights == other.rights && 
+		ep_square == other.ep_square && 
+		halfmove_count == other.halfmove_count; }
+	bool operator!=(const board_state_t& other) const { return rights != other.rights || 
+		ep_square != other.ep_square ||
+		halfmove_count != other.halfmove_count; }
 
 	void set_wking_castle_queen(bool can) { if (can) rights = rights | 4; else rights = rights & 11; }
 	void set_wking_castle_king(bool can) { if (can) rights = rights | 8; else rights = rights & 7; }
@@ -63,24 +71,20 @@ class board_t
 protected:
 	std::array<std::array<Piece, 8>, 8> board;
 	COLOR turn = WHITE;
-	castling_rights rights;
-	square_t ep_square = INVALID_SQ;
 	square_t white_king{ 0,4 };
 	square_t black_king{ 7,4 };
 
 public:
-	u8 halfmove_count = 0;
+	board_state_t board_state;
 
 	// constructors
 	board_t() : board(STARTING_POSITION) {}
 	board_t(const board_t& other) {
 		board = other.board;
 		turn = other.turn;
-		rights = other.rights;
-		ep_square = other.ep_square;
+		board_state = other.board_state;
 		white_king = other.white_king;
 		black_king = other.black_king;
-		halfmove_count = other.halfmove_count;
 	}
 	board_t(const board_t& other, Move& move) :board_t(other) { this->make_move(move); }
 	board_t(board_t&& other) noexcept;
@@ -95,16 +99,11 @@ public:
 	Piece piece_at(u8 rank, u8 file) const { return board[rank][file]; }
 	COLOR side_to_move() const { return turn; }
 	square_t get_king_sq(COLOR color) const { return (color == WHITE) ? white_king : black_king; }
-	square_t get_ep_square() const { return ep_square; }
-
-	// castling rights
-	castling_rights get_castling_rights() const { return rights; }
-	void set_castling_rights(castling_rights _rights) { rights = _rights; }
 
 	void make_move(Move& m);
 	void make_null_move() {
 		turn = COLOR(turn * -1);
-		ep_square = INVALID_SQ;
+		board_state.ep_square = INVALID_SQ;
 	}
 	void unmake_move(Move& m);
 
@@ -130,6 +129,10 @@ public:
 	Move uci_to_move(const std::string& move) const;
 
 	// operators
-	bool operator==(const board_t& other) const { return board == other.board && ep_square == other.ep_square && turn == other.turn && rights.rights == other.rights.rights; }
+	bool operator==(const board_t& other) const {
+		return board == other.board &&
+			board_state == other.board_state
+			&& turn == other.turn;
+	}
 	friend std::ostream& operator << (std::ostream& out, const board_t& _b);
 };

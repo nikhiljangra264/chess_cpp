@@ -11,7 +11,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 	}
 
 	// draw
-	if (board.halfmove_count >= 50)
+	if (board.board_state.halfmove_count >= 50)
 		return 0;
 	
 	// Base case: if depth is 0 return evaluation
@@ -38,8 +38,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 	{
 		if (stop) return max_score;
 		// make the move
-		auto temp_rights = board.get_castling_rights();
-		auto half_movecount = board.halfmove_count;
+		auto temp_board_state = board.board_state;
 		board.make_move(move);
 
 		// maximizing player
@@ -89,9 +88,8 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 		}
 
 		// unmake move
+		board.board_state = temp_board_state;
 		board.unmake_move(move);
-		board.set_castling_rights(temp_rights);
-		board.halfmove_count = half_movecount;
 		if (prune) break;
 	}
 
