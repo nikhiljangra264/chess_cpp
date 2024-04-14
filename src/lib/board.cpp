@@ -70,6 +70,7 @@ void board_t::make_move(Move &m)
 		if (m.from.file != m.to.file && !is_sq_occ(m.to))
 		{
 			board[m.from.rank][m.to.file] = EMPTY;
+			board[m.to.rank][m.to.file] = moving_piece;
 		}
 		// double pawn push
 		else if (m.to.rank == m.from.rank + 2 * turn)
@@ -343,16 +344,16 @@ std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 	// castling moves
 	if (turn == WHITE)
 	{
-		if (board_state.get_wking_castle_queen())
+		if (board_state.get_wking_castle_queen() && board[0][2] == EMPTY && board[0][3] == EMPTY)
 			moves.push_back(Move(sq, { 0,2 }));
-		if (board_state.get_wking_castle_king())
+		if (board_state.get_wking_castle_king() && board[0][5] == EMPTY && board[0][6] == EMPTY)
 			moves.push_back(Move(sq, { 0,6 }));
 	}
 	else
 	{
-		if (board_state.get_bking_castle_queen())
+		if (board_state.get_bking_castle_queen() && board[7][2] == EMPTY && board[7][3] == EMPTY)
 			moves.push_back(Move(sq, { 7,2 }));
-		if (board_state.get_bking_castle_king())
+		if (board_state.get_bking_castle_king() && board[7][5] == EMPTY && board[7][6] == EMPTY)
 			moves.push_back(Move(sq, { 7,6 }));
 	}
 	return moves;

@@ -45,7 +45,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 		if (maximizing_player)
 		{
 			// if mover's king still in check then illegal move
-			if (!board.is_sq_attacked_by(board.get_king_sq(WHITE), BLACK))
+			if (is_move_legal(move, WHITE))
 			{
 				is_make_any_move = true;
 				int score = absearch(alpha, beta, depth - 1);
@@ -67,7 +67,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 		else
 		{
 			// if mover's king still in check then illegal move
-			if (!board.is_sq_attacked_by(board.get_king_sq(BLACK), WHITE))
+			if (is_move_legal(move, BLACK))
 			{
 				is_make_any_move = true;
 				int score = absearch(alpha, beta, depth - 1);
@@ -121,6 +121,7 @@ std::string Engine::to_uci(Move& m)
 {
 	std::string uci_format;
 
+	// null move
 	if (m.from == INVALID_SQ || m.to == INVALID_SQ)
 		return "0000";
 
@@ -148,9 +149,8 @@ bool Engine::is_move_legal(Move& m, COLOR move_maker)
 		// queen side castling
 		if (m.to.file == m.from.file - 2)
 		{
-			// check d1 c1 square
-			if (board.is_sq_occ({ m.from.rank,3 }) ||
-				board.is_sq_occ({ m.from.rank,2 }) ||
+			// check ex dx cx square
+			if (board.is_sq_attacked_by({ m.from.rank,4 }, opposite) ||
 				board.is_sq_attacked_by({ m.from.rank,3 }, opposite) ||
 				board.is_sq_attacked_by({ m.from.rank,2 }, opposite))
 				return false;
@@ -159,9 +159,8 @@ bool Engine::is_move_legal(Move& m, COLOR move_maker)
 		// king side castling
 		if (m.from.file == m.to.file + 2)
 		{
-			// check f1 g1 square
-			if (board.is_sq_occ({ m.from.rank,5 }) ||
-				board.is_sq_occ({ m.from.rank,6 }) ||
+			// check ex fx gx square
+			if (board.is_sq_attacked_by({ m.from.rank,4 }, opposite) ||
 				board.is_sq_attacked_by({ m.from.rank,5 }, opposite) ||
 				board.is_sq_attacked_by({ m.from.rank,6 }, opposite))
 				return false;

@@ -64,7 +64,6 @@ TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_1)
         Move({0,4},{0,5}),
         Move({0,4},{1,3}),
         Move({0,4},{1,4}),
-        Move({0,4},{0,2}),
         Move({0,4},{0,6}),
         // H1 rook
         Move({0,7},{0,6}),
@@ -141,8 +140,6 @@ TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_2)
         Move({7,3},{3,7}),
         Move({7,4},{6,4}),
         Move({7,4},{6,3}),
-        Move({7,4},{7,2}),
-        Move({7,4},{7,6}),
         Move({7,5},{6,4}),
         Move({7,5},{5,3}),
         Move({7,5},{4,2}),
