@@ -81,13 +81,13 @@ public:
 
 	// constructors
 	board_t() : board(STARTING_POSITION) {}
-	board_t(const board_t& other) {
-		board = other.board;
-		turn = other.turn;
-		board_state = other.board_state;
-		white_king = other.white_king;
-		black_king = other.black_king;
-	}
+	board_t(const board_t& other):
+		board(other.board),
+		turn(other.turn),
+		board_state(other.board_state),
+		white_king(other.white_king),
+		black_king(other.black_king) {}
+
 	board_t(const board_t& other, Move& move) :board_t(other) { this->make_move(move); }
 	board_t(board_t&& other) noexcept;
 
@@ -110,13 +110,13 @@ public:
 	void unmake_move(Move& m);
 
 	// generate moves
+	std::deque<Move> get_psuedo_legal_moves();
 	std::deque<Move> get_psuedo_legal_move_pawn(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_knight(square_t sq) const;
 	std::deque<Move> get_psuedo_legal_move_bishop(square_t sq) const;
 	std::deque<Move> get_psuedo_legal_move_rook(square_t sq) const;
 	std::deque<Move> get_psuedo_legal_move_queen(square_t sq);
 	std::deque<Move> get_psuedo_legal_move_king(square_t sq) const;
-	std::deque<Move> get_psuedo_legal_moves();
 	std::deque<square_t> sq_attacked_by(square_t sq, COLOR color) const;
 	bool is_sq_attacked_by(square_t sq, COLOR color) const;
 

@@ -170,64 +170,65 @@ void board_t::unmake_move(Move &m)
 	}
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
+std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq) 
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	square_t to{sq.rank, sq.file};
 
 	// promotion
-	if ((turn == WHITE && sq.rank == 6) || (turn == BLACK && sq.rank == 1))
+	if ((color == WHITE && sq.rank == 6) || (color == BLACK && sq.rank == 1))
 	{
-		to.rank += turn;
+		to.rank += color;
 		// pawn push
 		if (!is_sq_occ(to))
 		{
-			moves.push_back(Move(sq, to, EMPTY, (turn == WHITE) ? W_KNIGHT : B_KNIGHT));
-			moves.push_back(Move(sq, to, EMPTY, (turn == WHITE) ? W_QUEEN : B_QUEEN));
+			moves.push_back(Move(sq, to, EMPTY, (color == WHITE) ? W_KNIGHT : B_KNIGHT));
+			moves.push_back(Move(sq, to, EMPTY, (color == WHITE) ? W_QUEEN : B_QUEEN));
 		}
 		// attack
 		to.file += 1;
 		// if the attacking square has opposite color piece
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 		{
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_KNIGHT : B_KNIGHT));
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_QUEEN : B_QUEEN));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_KNIGHT : B_KNIGHT));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_QUEEN : B_QUEEN));
 		}
 		to.file -= 2;
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 		{
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_KNIGHT : B_KNIGHT));
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_QUEEN : B_QUEEN));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_KNIGHT : B_KNIGHT));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_QUEEN : B_QUEEN));
 		}
 	}
 
 	else
 	{
-		to.rank += turn;
+		to.rank += color;
 		// pawn push
 		if (!is_sq_occ(to))
 		{
 			moves.push_back(Move(sq, to));
-			to.rank += turn;
-			if (((turn == WHITE && sq.rank == 1) || (turn == BLACK && sq.rank == 6)) && !is_sq_occ(to))
+			to.rank += color;
+			if (((color == WHITE && sq.rank == 1) || (color == BLACK && sq.rank == 6)) && !is_sq_occ(to))
 				moves.push_back(Move(sq, to));
 		}
 
 		// attack
-		to = {sq.rank + turn, sq.file + 1};
+		to = {sq.rank + color, sq.file + 1};
 		// if the attacking square has opposite color piece
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 			moves.push_back(Move(sq, to, piece_at(to)));
 
 		to.file -= 2;
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 			moves.push_back(Move(sq, to, piece_at(to)));
 
 		// en passant
 		if (board_state.ep_square != INVALID_SQ && 
 			board_state.ep_square.rank == sq.rank && 
 			(board_state.ep_square.file == sq.file - 1 || board_state.ep_square.file == sq.file + 1))
-			moves.push_back(Move(sq, {sq.rank + turn, board_state.ep_square.file}, piece_at(board_state.ep_square), true));
+			moves.push_back(Move(sq, {sq.rank + color, board_state.ep_square.file}, piece_at(board_state.ep_square), true));
 	}
 
 	return moves;
@@ -236,11 +237,12 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
 		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// if square is occ by same color piece we can't move to the sq so skip current move
-		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == turn))
+		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == color))
 			continue;
 
 		moves.push_back(Move(sq, to, piece_at(to)));
@@ -251,6 +253,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : BISHOP_DIRECTIONS)
 	{
@@ -261,7 +264,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 			// check if we can move the piece
 			if (is_sq_occ(to))
 			{
-				if (piece_color(piece_at(to)) != turn)
+				if (piece_color(piece_at(to)) != color)
 					moves.push_back(Move(sq, to, piece_at(to)));
 				break;
 			}
@@ -279,6 +282,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : ROOK_DIRECTIONS)
 	{
@@ -289,7 +293,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 			// check if we can move the piece
 			if (is_sq_occ(to))
 			{
-				if (piece_color(piece_at(to)) != turn)
+				if (piece_color(piece_at(to)) != color)
 					moves.push_back(Move(sq, to, piece_at(to)));
 				break;
 			}
@@ -315,18 +319,19 @@ std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	// simple moves
 	for (auto &dir : ALL_DIRECTIONS)
 	{
 		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// if square is occ by same color piece we can't move to the sq so skip current move
-		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == turn))
+		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == color))
 			continue;
 
 		moves.push_back(Move(sq, to, piece_at(to)));
 	}
 	// castling moves
-	if (turn == WHITE)
+	if (color == WHITE)
 	{
 		if (board_state.get_wking_castle_queen() && board[0][2] == EMPTY && board[0][3] == EMPTY && board[0][1] == EMPTY)
 			moves.push_back(Move(sq, { 0,2 }));

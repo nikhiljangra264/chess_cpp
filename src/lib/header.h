@@ -72,7 +72,7 @@ struct square_t
     u8 rank : 4;
 
     square_t() = default;
-    square_t(int _rank, int _file) : file(_file), rank(_rank) {}
+    constexpr square_t(int _rank, int _file) : file(_file), rank(_rank) {}
 
     bool operator==(const square_t other) const { return file == other.file && rank == other.rank; }
     bool operator!=(const square_t other) const { return file != other.file || rank != other.rank; }
