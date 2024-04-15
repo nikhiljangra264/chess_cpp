@@ -31,30 +31,24 @@ void board_t::make_move(Move &m)
 	if (is_king(moving_piece))
 	{
 		// update position
-		if (turn == WHITE)
-			white_king = m.to;
-		else
-			black_king = m.to;
+		if (turn == WHITE) white_king = m.to;
+		else black_king = m.to;
 
 		// revoke rights
 		board_state.revoke_castling_rights(turn);
 
-		// is king is jumping more than one square than castling
-		if (abs(m.to.file - m.from.file) == 2)
+		// if king is jumping more than one square than castling
+		// queen side castling
+		if (m.from.file == 4 && m.to.file == 2)
 		{
-			// move rooks
-			// queen side castling
-			if (m.to.file == 2)
-			{
-				board[m.to.rank][0] = EMPTY;
-				board[m.to.rank][3] = (turn == WHITE) ? W_ROOK : B_ROOK;
-			}
-			// king side castling
-			else
-			{
-				board[m.to.rank][7] = EMPTY;
-				board[m.to.rank][5] = (turn == WHITE) ? W_ROOK : B_ROOK;
-			}
+			board[m.to.rank][0] = EMPTY;
+			board[m.to.rank][3] = (turn == WHITE) ? W_ROOK : B_ROOK;
+			board_state.halfmove_count = 0;
+		}
+		if (m.from.file == 4 && m.to.file == 6)
+		{
+			board[m.to.rank][7] = EMPTY;
+			board[m.to.rank][5] = (turn == WHITE) ? W_ROOK : B_ROOK;
 			board_state.halfmove_count = 0;
 		}
 
@@ -92,17 +86,13 @@ void board_t::make_move(Move &m)
 		{
 			if (turn == WHITE)
 			{
-				if (m.from.file == 0)
-					board_state.set_wking_castle_queen(false);
-				else if (m.from.file == 7)
-					board_state.set_wking_castle_king(false);
+				if (m.from.file == 0)		board_state.set_wking_castle_queen(false);
+				else if (m.from.file == 7)	board_state.set_wking_castle_king(false);
 			}
 			else
 			{
-				if (m.from.file == 0)
-					board_state.set_bking_castle_queen(false);
-				else if (m.from.file == 7)
-					board_state.set_bking_castle_king(false);
+				if (m.from.file == 0)		board_state.set_bking_castle_queen(false);
+				else if (m.from.file == 7)	board_state.set_bking_castle_king(false);
 			}
 		}
 		board[m.to.rank][m.to.file] = moving_piece;
@@ -113,7 +103,7 @@ void board_t::make_move(Move &m)
 	}
 
 	// change turn
-	turn = COLOR(-turn);
+	turn = static_cast<COLOR>(-turn);
 	board_state.halfmove_count++;
 	board[m.from.rank][m.from.file] = EMPTY;
 }
@@ -121,35 +111,29 @@ void board_t::make_move(Move &m)
 void board_t::unmake_move(Move &m)
 {
 	// the turn variable is updated
-	turn = COLOR(-1 * turn);
+	turn = static_cast<COLOR>(-turn);
 	Piece moving_piece = piece_at(m.to);
 
 	// king moves
 	if (is_king(moving_piece))
 	{
 		// update position
-		if (turn == WHITE)
-			white_king = m.from;
-		else
-			black_king = m.from;
+		if (turn == WHITE) white_king = m.from;
+		else black_king = m.from;
 
-		// is king is jumping more than one square than castling
-		if (abs(m.to.file - m.from.file) == 2)
+		// if king is jumping more than one square than castling
+		// queen side castling
+		if (m.from.file == 4 && m.to.file == 2)
 		{
-			// move rooks to their initial position
-			// queen side castling
-			if (m.to.file == 2)
-			{
-				board[m.to.rank][3] = EMPTY;
-				board[m.to.rank][0] = (turn == WHITE) ? W_ROOK : B_ROOK;
-			}
-			// king side castling
-			else
-			{
-				board[m.to.rank][5] = EMPTY;
-				board[m.to.rank][7] = (turn == WHITE) ? W_ROOK : B_ROOK;
-			}
+			board[m.to.rank][3] = EMPTY;
+			board[m.to.rank][0] = (turn == WHITE) ? W_ROOK : B_ROOK;
 		}
+		if (m.from.file == 4 && m.to.file == 6)
+		{
+			board[m.to.rank][5] = EMPTY;
+			board[m.to.rank][7] = (turn == WHITE) ? W_ROOK : B_ROOK;
+		}
+
 		board[m.to.rank][m.to.file] = m.capture;
 		board[m.from.rank][m.from.file] = moving_piece;
 	}
@@ -173,7 +157,7 @@ void board_t::unmake_move(Move &m)
 	}
 
 	// check for promotion moves
-	else if ((m.to.rank == 7 || m.to.rank == 0) && m.promotion_or_enpassant != EMPTY)
+	else if ((m.to.rank == 7 || m.to.rank == 0) && m.promotion_or_enpassant)
 	{
 		board[m.from.rank][m.from.file] = (turn == WHITE) ? W_PAWN : B_PAWN;
 		board[m.to.rank][m.to.file] = m.capture;
@@ -186,64 +170,65 @@ void board_t::unmake_move(Move &m)
 	}
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
+std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq) 
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	square_t to{sq.rank, sq.file};
 
 	// promotion
-	if ((turn == WHITE && sq.rank == 6) || (turn == BLACK && sq.rank == 1))
+	if ((color == WHITE && sq.rank == 6) || (color == BLACK && sq.rank == 1))
 	{
-		to.rank += turn;
+		to.rank += color;
 		// pawn push
 		if (!is_sq_occ(to))
 		{
-			moves.push_back(Move(sq, to, EMPTY, (turn == WHITE) ? W_KNIGHT : B_KNIGHT));
-			moves.push_back(Move(sq, to, EMPTY, (turn == WHITE) ? W_QUEEN : B_QUEEN));
+			moves.push_back(Move(sq, to, EMPTY, (color == WHITE) ? W_KNIGHT : B_KNIGHT));
+			moves.push_back(Move(sq, to, EMPTY, (color == WHITE) ? W_QUEEN : B_QUEEN));
 		}
 		// attack
 		to.file += 1;
 		// if the attacking square has opposite color piece
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 		{
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_KNIGHT : B_KNIGHT));
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_QUEEN : B_QUEEN));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_KNIGHT : B_KNIGHT));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_QUEEN : B_QUEEN));
 		}
 		to.file -= 2;
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 		{
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_KNIGHT : B_KNIGHT));
-			moves.push_back(Move(sq, to, piece_at(to), (turn == WHITE) ? W_QUEEN : B_QUEEN));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_KNIGHT : B_KNIGHT));
+			moves.push_back(Move(sq, to, piece_at(to), (color == WHITE) ? W_QUEEN : B_QUEEN));
 		}
 	}
 
 	else
 	{
-		to.rank += turn;
+		to.rank += color;
 		// pawn push
 		if (!is_sq_occ(to))
 		{
 			moves.push_back(Move(sq, to));
-			to.rank += turn;
-			if (((turn == WHITE && sq.rank == 1) || (turn == BLACK && sq.rank == 6)) && !is_sq_occ(to))
+			to.rank += color;
+			if (((color == WHITE && sq.rank == 1) || (color == BLACK && sq.rank == 6)) && !is_sq_occ(to))
 				moves.push_back(Move(sq, to));
 		}
 
 		// attack
-		to = {sq.rank + turn, sq.file + 1};
+		to = {sq.rank + color, sq.file + 1};
 		// if the attacking square has opposite color piece
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 			moves.push_back(Move(sq, to, piece_at(to)));
 
 		to.file -= 2;
-		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != turn)
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) != color)
 			moves.push_back(Move(sq, to, piece_at(to)));
 
 		// en passant
 		if (board_state.ep_square != INVALID_SQ && 
 			board_state.ep_square.rank == sq.rank && 
 			(board_state.ep_square.file == sq.file - 1 || board_state.ep_square.file == sq.file + 1))
-			moves.push_back(Move(sq, {sq.rank + turn, board_state.ep_square.file}, piece_at(board_state.ep_square), true));
+			moves.push_back(Move(sq, {sq.rank + color, board_state.ep_square.file}, piece_at(board_state.ep_square), true));
 	}
 
 	return moves;
@@ -252,11 +237,12 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
 		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// if square is occ by same color piece we can't move to the sq so skip current move
-		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == turn))
+		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == color))
 			continue;
 
 		moves.push_back(Move(sq, to, piece_at(to)));
@@ -267,6 +253,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : BISHOP_DIRECTIONS)
 	{
@@ -277,7 +264,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 			// check if we can move the piece
 			if (is_sq_occ(to))
 			{
-				if (piece_color(piece_at(to)) != turn)
+				if (piece_color(piece_at(to)) != color)
 					moves.push_back(Move(sq, to, piece_at(to)));
 				break;
 			}
@@ -295,6 +282,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : ROOK_DIRECTIONS)
 	{
@@ -305,7 +293,7 @@ std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 			// check if we can move the piece
 			if (is_sq_occ(to))
 			{
-				if (piece_color(piece_at(to)) != turn)
+				if (piece_color(piece_at(to)) != color)
 					moves.push_back(Move(sq, to, piece_at(to)));
 				break;
 			}
@@ -331,27 +319,28 @@ std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq)
 std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 {
 	std::deque<Move> moves;
+	COLOR color = piece_color(piece_at(sq));
 	// simple moves
 	for (auto &dir : ALL_DIRECTIONS)
 	{
 		square_t to{sq.rank + dir[0], sq.file + dir[1]};
 		// if square is occ by same color piece we can't move to the sq so skip current move
-		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == turn))
+		if (!to.inbound() || (is_sq_occ(to) && piece_color(piece_at(to)) == color))
 			continue;
 
 		moves.push_back(Move(sq, to, piece_at(to)));
 	}
 	// castling moves
-	if (turn == WHITE)
+	if (color == WHITE)
 	{
-		if (board_state.get_wking_castle_queen() && board[0][2] == EMPTY && board[0][3] == EMPTY)
+		if (board_state.get_wking_castle_queen() && board[0][2] == EMPTY && board[0][3] == EMPTY && board[0][1] == EMPTY)
 			moves.push_back(Move(sq, { 0,2 }));
 		if (board_state.get_wking_castle_king() && board[0][5] == EMPTY && board[0][6] == EMPTY)
 			moves.push_back(Move(sq, { 0,6 }));
 	}
 	else
 	{
-		if (board_state.get_bking_castle_queen() && board[7][2] == EMPTY && board[7][3] == EMPTY)
+		if (board_state.get_bking_castle_queen() && board[7][2] == EMPTY && board[7][3] == EMPTY && board[7][1] == EMPTY)
 			moves.push_back(Move(sq, { 7,2 }));
 		if (board_state.get_bking_castle_king() && board[7][5] == EMPTY && board[7][6] == EMPTY)
 			moves.push_back(Move(sq, { 7,6 }));
@@ -496,32 +485,32 @@ std::deque<Move> board_t::get_psuedo_legal_moves()
 				continue;
 			else if (is_pawn(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_pawn({rank, file});
+				std::deque<Move> temp = std::move(get_psuedo_legal_move_pawn({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_knight(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_knight({rank, file});
+				std::deque<Move> temp = std::move(get_psuedo_legal_move_knight({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_bishop(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_bishop({rank, file});
+				std::deque<Move> temp = std::move(get_psuedo_legal_move_bishop({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_rook(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_rook({rank, file});
+				std::deque<Move> temp = std::move(get_psuedo_legal_move_rook({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_queen(piece_at(rank, file)))
 			{
-				auto temp = get_psuedo_legal_move_queen({rank, file});
+				std::deque<Move> temp = std::move(get_psuedo_legal_move_queen({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else
 			{
-				auto temp = get_psuedo_legal_move_king({rank, file});
+				std::deque<Move> temp = std::move(get_psuedo_legal_move_king({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 		}
