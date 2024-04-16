@@ -15,7 +15,7 @@ void UCI::uci() {
     output("id name chess_cpp");
     output("id author Nikhil");
     output("");
-    //output("option name Move Overhead type spin default 5 min 0 max 5000");
+    output("option name Move Overhead type spin default 5 min 0 max 5000");
     //output("option name Ponder type check default false");
     output("uciok");
 }
@@ -77,15 +77,25 @@ void UCI::processCommand(const std::string& input) {
         for (int index = 1; index < command.size(); index++)
         {
             if (command[index] == "depth")
+            {
                 engine.max_depth = std::stoi(command[index++ + 1]);
+                if (engine.max_depth == 0) throw std::invalid_argument("depth value 0!");
+            }
             else if (command[index] == "nodes")
+            {
                 engine.max_nodes = std::stoi(command[index++ + 1]);
+                if (engine.max_nodes == 0) throw std::invalid_argument("nodes value 0!");
+            }
             else if (command[index] == "movetime")
                 engine.max_time = std::stoi(command[index++ + 1]);
             else if (command[index] == "wtime" && board.side_to_move() == WHITE)
                 engine.max_time = std::stoi(command[index++ + 1]);
             else if (command[index] == "btime" && board.side_to_move() == BLACK)
                 engine.max_time = std::stoi(command[index++ + 1]);
+            else if (command[index] == "winc" && board.side_to_move() == WHITE)
+                engine.max_time += std::stoi(command[index++ + 1]);
+            else if (command[index] == "binc" && board.side_to_move() == BLACK)
+                engine.max_time += std::stoi(command[index++ + 1]);
         }
 
         engine.stop = false;

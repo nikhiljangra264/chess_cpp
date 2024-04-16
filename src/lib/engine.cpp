@@ -1,6 +1,6 @@
 #include "engine.h"
 
-int Engine::absearch(int alpha, int beta, u16 depth)
+int Engine::absearch(int alpha, int beta, u8 depth)
 {
 	// increase node traveled
 	nodes++;
@@ -45,7 +45,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 		if (maximizing_player)
 		{
 			// if mover's king still in check then illegal move
-			if (is_move_legal(move, WHITE))
+			if (is_move_legal(move, WHITE, BLACK))
 			{
 				is_make_any_move = true;
 				int score = absearch(alpha, beta, depth - 1);
@@ -67,7 +67,7 @@ int Engine::absearch(int alpha, int beta, u16 depth)
 		else
 		{
 			// if mover's king still in check then illegal move
-			if (is_move_legal(move, BLACK))
+			if (is_move_legal(move, BLACK, WHITE))
 			{
 				is_make_any_move = true;
 				int score = absearch(alpha, beta, depth - 1);
@@ -140,9 +140,8 @@ std::string Engine::to_uci(Move& m)
 	return uci_format;
 }
 
-bool Engine::is_move_legal(Move& m, COLOR move_maker)
+bool Engine::is_move_legal(Move& m, COLOR move_maker, COLOR opposite)
 {
-	COLOR opposite = (move_maker == WHITE) ? BLACK : WHITE;
 	// if king castling
 	if (is_king(board.piece_at(m.to)))
 	{

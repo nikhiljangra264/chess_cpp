@@ -13,25 +13,25 @@ class Engine
 private:
 	board_t& board;
 	Move best_move;
-	u16 nodes = 0;
+	u32 nodes = 0;
 	std::chrono::time_point<std::chrono::steady_clock> start_time;
 
 public:
 	u16 max_depth = MAX_DEPTH;
-	u16 max_nodes = MAX_NODES;
-	u64 max_time = MAX_TIME;
+	u32 max_nodes = MAX_NODES;
+	time_type max_time = MAX_TIME;
 	bool stop = false;
 
 	Engine(board_t& _board) :board(_board) {}
 
-	int absearch(int alpha, int beta, u16 depth);
+	int absearch(int alpha, int beta, u8 depth);
 	void search();
 
 	std::string to_uci(Move& m);
 
-	bool is_move_legal(Move& m, COLOR move_maker);
+	bool is_move_legal(Move& m, COLOR move_maker, COLOR opposite);
 
-	u64 time() const
+	time_type time() const
 	{
 		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
 	}

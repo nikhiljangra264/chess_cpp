@@ -7,7 +7,7 @@ add_executable(chess_cpp
     lib/engine.cpp
     lib/evaluate.cpp
     lib/uci.cpp
- "lib/move.h")
+ "lib/move.h" )
 
 # Optionally, you can include header files via target_include_directories()
 # target_include_directories(chess_cpp PRIVATE src)
