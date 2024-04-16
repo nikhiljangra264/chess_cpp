@@ -1,8 +1,8 @@
 #pragma once
 
 #include "header.h"
-
-static u8 PieceValue[13] = { 0,100,320,330,500,900,20000,100,320,330,500,900,20000 };
+	
+static u16 PieceValue[13] = { 0,100,320,330,500,900,20000,100,320,330,500,900,20000 };
 
 static s8 psqt[13][8][8] = {
 	// empty
