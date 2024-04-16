@@ -23,22 +23,22 @@ enum COLOR :s8 {
 
 /// <summary>
 /// piece representation
-/// king queen rook bishop night pawn color empty
+/// white king = 6
 /// </summary>
 enum Piece :u8 {
-    EMPTY =     0b00000000,
-    W_PAWN =    0b00000110,
-    W_KNIGHT =  0b00001010,
-    W_BISHOP =  0b00010010,
-    W_ROOK =    0b00100010,
-    W_QUEEN =   0b01000010,
-    W_KING =    0b10000010,
-    B_PAWN =    0b00000100,
-    B_KNIGHT =  0b00001000,
-    B_BISHOP =  0b00010000,
-    B_ROOK =    0b00100000,
-    B_QUEEN =   0b01000000,
-    B_KING =    0b10000000,
+    EMPTY = 0,
+    W_PAWN,
+    W_KNIGHT,
+    W_BISHOP,
+    W_ROOK,
+    W_QUEEN,
+    W_KING = 6,
+    B_PAWN,
+    B_KNIGHT,
+    B_BISHOP,
+    B_ROOK,
+    B_QUEEN,
+    B_KING
 };
 
 enum PieceSymbol :s8 {
@@ -57,14 +57,14 @@ enum PieceSymbol :s8 {
     B_KING_SYMBOL =     'k'
 };
 
-inline bool is_pawn(Piece _p) { return _p   & static_cast<u8>(4); }
-inline bool is_knight(Piece _p) { return _p & static_cast<u8>(8); }
-inline bool is_bishop(Piece _p) { return _p & static_cast<u8>(16); }
-inline bool is_rook(Piece _p) { return _p   & static_cast<u8>(32); }
-inline bool is_queen(Piece _p) { return _p  & static_cast<u8>(64); }
-inline bool is_king(Piece _p) { return _p   & static_cast<u8>(128); }
+inline bool is_pawn(Piece _p)   { return _p == B_PAWN || _p == W_PAWN; }
+inline bool is_knight(Piece _p) { return _p == B_KNIGHT || _p == W_KNIGHT ; }
+inline bool is_bishop(Piece _p) { return _p == B_BISHOP || _p == W_BISHOP ; }
+inline bool is_rook(Piece _p)   { return _p == B_ROOK || _p == W_ROOK ; }
+inline bool is_queen(Piece _p)  { return _p == B_QUEEN || _p == W_QUEEN; }
+inline bool is_king(Piece _p)   { return _p == B_KING || _p == W_KING ; }
 
-inline COLOR piece_color(Piece _p) { return (_p & static_cast<u8>(2)) ? WHITE : BLACK; }
+inline COLOR piece_color(Piece _p) { return (_p <= W_KING)?WHITE:BLACK; }
 
 struct square_t
 {
