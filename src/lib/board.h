@@ -7,6 +7,7 @@
 
 #include "header.h"
 #include "move.h"
+#include "hashing.h"
 
 /// <summary>
 /// 0000KQkq
@@ -75,18 +76,21 @@ protected:
 	COLOR turn = WHITE;
 	square_t white_king{ 0,4 };
 	square_t black_king{ 7,4 };
+	hash_t key=0;
 
 public:
 	board_state_t board_state;
 
 	// constructors
-	board_t() : board(STARTING_POSITION) {}
+	board_t() : board(STARTING_POSITION) { init_key(); }
 	board_t(const board_t& other):
 		board(other.board),
 		turn(other.turn),
 		board_state(other.board_state),
 		white_king(other.white_king),
-		black_king(other.black_king) {}
+		black_king(other.black_king),
+		key(other.key)
+	{}
 
 	board_t(const board_t& other, Move& move) :board_t(other) { this->make_move(move); }
 	board_t(board_t&& other) noexcept;
@@ -102,12 +106,13 @@ public:
 	COLOR side_to_move() const { return turn; }
 	square_t get_king_sq(COLOR color) const { return (color == WHITE) ? white_king : black_king; }
 
+	// make or unmake move
 	void make_move(Move& m);
 	void make_null_move() {
 		turn = static_cast<COLOR>(-turn);
 		board_state.ep_square = INVALID_SQ;
 	}
-	void unmake_move(Move& m);
+	void unmake_move(Move& m, board_state_t& prev_state);
 
 	// generate moves
 	std::deque<Move> get_psuedo_legal_moves();
@@ -123,6 +128,7 @@ public:
 	// initialize board
 	void reset() {
 		board = EMPTY_POSITION;
+		key = 0;
 	}
 	void init_startpos();
 	void init_fen(std::deque<std::string>& command);
@@ -137,4 +143,9 @@ public:
 			&& turn == other.turn;
 	}
 	friend std::ostream& operator << (std::ostream& out, const board_t& _b);
+
+	// hashing
+	void init_key();
+	hash_t get_key() const { return key; }
+
 };

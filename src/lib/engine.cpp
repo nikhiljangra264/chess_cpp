@@ -88,8 +88,7 @@ int Engine::absearch(int alpha, int beta, u8 depth)
 		}
 
 		// unmake move
-		board.board_state = temp_board_state;
-		board.unmake_move(move);
+		board.unmake_move(move, temp_board_state);
 		if (prune) break;
 	}
 
