@@ -55,6 +55,7 @@ void UCI::processCommand(const std::string& input) {
         engine.reset();
     }
     else if (command[0] == "ucinewgame") {
+        zobrist_hasher::init();
         ucinewgame();
     }
     else if (command[0] == "uci") {

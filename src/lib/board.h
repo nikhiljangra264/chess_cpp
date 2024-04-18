@@ -146,6 +146,6 @@ public:
 
 	// hashing
 	void init_key();
-	hash_t get_key() const { return key; }
+	hash_t get_key() { return key; }
 
 };
