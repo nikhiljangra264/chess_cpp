@@ -15,8 +15,6 @@ void UCI::uci() {
     output("id name chess_cpp");
     output("id author Nikhil");
     output("");
-    output("option name Move Overhead type spin default 5 min 0 max 5000");
-    //output("option name Ponder type check default false");
     output("uciok");
 }
 
@@ -55,7 +53,8 @@ void UCI::processCommand(const std::string& input) {
         engine.reset();
     }
     else if (command[0] == "ucinewgame") {
-        zobrist_hasher::init();
+        board.init_startpos();
+        engine.complete_reset();
         ucinewgame();
     }
     else if (command[0] == "uci") {
@@ -99,12 +98,12 @@ void UCI::processCommand(const std::string& input) {
                 engine.max_time += std::stoi(command[index++ + 1]);
         }
 
-        engine.stop = false;
-
         if (thread && thread->joinable()) {
             thread->join();
             delete thread; // Clean up the previous thread
         }
+
+        engine.stop = false;
         // Create a new thread and execute it
         thread = new std::thread([this]() { engine.search(); });
     }

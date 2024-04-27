@@ -3,6 +3,11 @@
 board_t::board_t(board_t &&other) noexcept
 {
 	board = std::move(other.board);
+	piece_keys = std::move(other.piece_keys);
+	en_passant_keys = std::move(other.en_passant_keys);
+	castling_rights_keys = std::move(other.castling_rights_keys);
+
+	side_to_move_key = other.side_to_move_key;
 	turn = other.turn;
 	board_state = other.board_state;
 	white_king = other.white_king;
@@ -13,6 +18,11 @@ board_t::board_t(board_t &&other) noexcept
 void board_t::operator=(board_t &&other) noexcept
 {
 	board = std::move(other.board);
+	piece_keys = std::move(other.piece_keys);
+	en_passant_keys = std::move(other.en_passant_keys);
+	castling_rights_keys = std::move(other.castling_rights_keys);
+
+	side_to_move_key = other.side_to_move_key;
 	turn = other.turn;
 	board_state = other.board_state;
 	white_king = other.white_king;
@@ -457,6 +467,14 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color) const
 	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		return true;
 
+	// check for king
+	for (auto& dir : ALL_DIRECTIONS)
+	{
+		to = { sq.rank + dir[0], sq.file + dir[1] };
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_king(piece_at(to)))
+			return true;
+	}
+
 	// Check for knight
 	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
@@ -565,6 +583,13 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color) const
 	to.file -= 2;
 	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		squares.push_back(to);
+	// check for king
+	for (auto& dir : ALL_DIRECTIONS)
+	{
+		to = { sq.rank + dir[0], sq.file + dir[1] };
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_king(piece_at(to)))
+			squares.push_back(to);
+	}
 
 	return squares;
 }
@@ -831,6 +856,42 @@ void board_t::init_key()
 	// en passant move
 	if (board_state.ep_square != INVALID_SQ)
 		key ^= en_passant_keys[board_state.ep_square.rank - 3][board_state.ep_square.file];
+}
+
+void board_t::init_hash()
+{
+	// Initialize random number generator
+	std::mt19937_64 rng(std::random_device{}());
+	std::uniform_int_distribution<hash_t> dist(0, std::numeric_limits<hash_t>::max());
+
+	// Generate random keys for pieces on each square
+
+	for (int piece = 0; piece < 12; ++piece)
+	{
+		for (u8 rank = 0; rank < 8; rank++)
+		{
+			for (u8 file = 0; file < 8; file++)
+			{
+				piece_keys[piece][rank][file] = dist(rng);
+			}
+		}
+	}
+
+	// Generate random keys for side to move
+	side_to_move_key = dist(rng);
+
+	// Generate random keys for castling rights
+	for (int i = 0; i < 16; ++i) {
+		castling_rights_keys[i] = dist(rng);
+	}
+
+	// Generate random keys for en passant squares
+	// for file 4 and file 5
+	for (int i = 0; i < 8; i++)
+	{
+		en_passant_keys[0][i] = dist(rng);
+		en_passant_keys[1][i] = dist(rng);
+	}
 }
 
 std::ostream &operator<<(std::ostream &out, const board_t &_b)

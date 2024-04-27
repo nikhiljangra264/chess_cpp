@@ -15,6 +15,7 @@ using s8 = char;
 
 using time_type = uint32_t;
 using score_t = int32_t;
+using hash_t = u64;
 
 enum COLOR :s8 {
     WHITE = 1,

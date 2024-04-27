@@ -4,10 +4,10 @@
 #include <deque>
 #include <string>
 #include <iostream>
+#include <random>
 
 #include "header.h"
 #include "move.h"
-#include "hashing.h"
 
 /// <summary>
 /// 0000KQkq
@@ -73,18 +73,27 @@ class board_t
 {
 protected:
 	std::array<std::array<Piece, 8>, 8> board;
+	std::array<std::array<std::array<hash_t, 8>, 8>, 12> piece_keys;
+	std::array<std::array<hash_t, 8>, 2> en_passant_keys; // One for each square on 4th rank and 5th rank file
+	std::array<hash_t, 16> castling_rights_keys;
+	hash_t side_to_move_key;
+
+	hash_t key=0;
 	COLOR turn = WHITE;
 	square_t white_king{ 0,4 };
 	square_t black_king{ 7,4 };
-	hash_t key=0;
 
 public:
 	board_state_t board_state;
 
 	// constructors
-	board_t() : board(STARTING_POSITION) { init_key(); }
+	board_t() : board(STARTING_POSITION) { init_hash(); init_key(); }
 	board_t(const board_t& other):
 		board(other.board),
+		piece_keys(other.piece_keys),
+		en_passant_keys(other.en_passant_keys),
+		castling_rights_keys(other.castling_rights_keys),
+		side_to_move_key(other.side_to_move_key),
 		turn(other.turn),
 		board_state(other.board_state),
 		white_king(other.white_king),
@@ -146,6 +155,7 @@ public:
 
 	// hashing
 	void init_key();
-	hash_t get_key() { return key; }
+	hash_t get_key() const { return key; }
+	void init_hash();
 
 };

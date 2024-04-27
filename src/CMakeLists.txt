@@ -8,7 +8,6 @@ add_executable(chess_cpp
     lib/evaluate.cpp
     lib/uci.cpp
     lib/move.h
-    lib/hashing.h    
  )
 
 # Optionally, you can include header files via target_include_directories()
