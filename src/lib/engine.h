@@ -48,19 +48,6 @@ public:
 	{
 		return  time()  >= max_time;
 	}
-/*
-	void print_stats()
-	{
-		std::cout << "info";
-		std::cout << " depth " << max_depth;
-		std::cout << " nodes " << nodes;
-		std::cout << " nps " << (nodes / time());
-		std::cout << " time " << time() << "ms";
-		std::cout << " pv " << to_uci(best_move);
-		std::cout << std::endl;
-		std::cout.flush();
-	}
-*/
 
 	// resets
 	void complete_reset()

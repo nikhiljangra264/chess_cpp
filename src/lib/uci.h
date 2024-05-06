@@ -1,7 +1,5 @@
 #pragma once
 
-// ok
-
 // External
 #include <thread>
 #include <vector>
@@ -36,7 +34,7 @@ public:
         std::cout << s << std::endl;
         std::cout.flush();
     }
-
+    
     void stop();
     void uci();
     void isready();

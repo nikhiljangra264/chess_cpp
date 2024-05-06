@@ -3,7 +3,7 @@
 set(CMAKE_CXX_STANDARD 11)
 
 project(chess_cpp
-        VERSION 0.0.1
+        VERSION 1.0.0
         DESCRIPTION "A Tiny UCI Chess Engine"
         LANGUAGES CXX)
 

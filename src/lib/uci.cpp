@@ -6,8 +6,13 @@
 void UCI::stop() {
     // stop engine and join thread
     engine.stop = true;
-    if (thread != nullptr && thread->joinable()) {
-        thread->join();
+    while (thread != nullptr) {
+        if (thread->joinable())
+        {
+            thread->join();
+            break;
+        }
+        engine.stop = true;
     }
 }
 
@@ -23,7 +28,8 @@ void UCI::isready() {
 }
 
 void UCI::ucinewgame() {
-    // Do something for new game
+    board.init_startpos();
+    engine.complete_reset();
 }
 
 void UCI::eval() {
@@ -53,8 +59,6 @@ void UCI::processCommand(const std::string& input) {
         engine.reset();
     }
     else if (command[0] == "ucinewgame") {
-        board.init_startpos();
-        engine.complete_reset();
         ucinewgame();
     }
     else if (command[0] == "uci") {

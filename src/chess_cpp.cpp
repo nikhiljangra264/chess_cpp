@@ -1,7 +1,6 @@
 ﻿// chess_cpp.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-// ok
 
 #include <iostream>
 #include <string>
@@ -11,17 +10,17 @@
 int main(int argc, char const* argv[])
 {
     // uci instance
-    UCI game;
+    UCI uci;
     std::string line;
 
     for (int i = 1; i < argc; i++) {
         line = argv[i];
-        game.processCommand(line);
+        uci.processCommand(line);
     }
 
     while (std::getline(std::cin, line))
     {
-        game.processCommand(line);
+        uci.processCommand(line);
         if (line == "quit")
             break;
     }
