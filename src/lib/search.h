@@ -62,6 +62,7 @@ public:
         moves_table.clear();
         score_table.clear();
         cache_positions.clear();
+        __stop = false;
     }
 };
 
