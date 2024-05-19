@@ -2,6 +2,7 @@
 #define __SEARCH_H__
 
 #include <string>
+#include <memory>
 #include <algorithm>
 #include <chrono>
 #include <utility>
@@ -19,7 +20,7 @@ private:
     Move best_move;
     uint64_t nodes = 0;
 
-    std::unordered_map<hash_t, std::shared_ptr<std::deque<Move>>> moves_table;
+    std::unordered_map<hash_t, std::deque<Move>> moves_table;
     std::unordered_map<hash_t, score_t> score_table;
     std::set<hash_t> cache_positions;
 

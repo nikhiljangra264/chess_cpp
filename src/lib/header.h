@@ -91,6 +91,7 @@ static constexpr square_t INVALID_SQ{ 15, 15 };
 constexpr int MAX_DEPTH = 10;
 constexpr time_type MAX_TIME = -1;
 constexpr u64 MAX_NODES = -1;
+constexpr time_type OVERHEAD_TIME = 30;
 
 constexpr score_t CHECKMATE_VALUE = 32000;
 constexpr score_t STALEMATE_VALUE = -500;

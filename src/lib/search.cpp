@@ -34,31 +34,19 @@ int Search::absearch(int alpha, int beta, int depth, int ply)
 	bool prune = false;
 	int max_score = -INFINITE;
 
-	std::shared_ptr<std::deque<Move>> moves;
-
-	if (moves_table.find(key) != moves_table.end())
-	{
-		moves = moves_table[key];
-	}
-	else
+	if (moves_table.find(key) == moves_table.end())
 	{
 		// Get pseudo-legal moves
-		std::deque<Move> moves_temp = board.get_psuedo_legal_moves();
-
-		// Sort the moves
-		std::sort(moves_temp.begin(), moves_temp.end(), [](Move& a, Move& b) {
-			return eval::score_move(a) > eval::score_move(b);
-			});
-
-		moves = std::make_shared<std::deque<Move>>(std::move(moves_temp));
-		moves_table[key] = moves;
+		moves_table[key] = std::move(board.get_psuedo_legal_moves());
 		score_table[key] = max_score;
 	}
+
+	std::deque<Move>& moves = moves_table[key];
 
 	cache_positions.insert(key);
 
 	// traverse the moves
-	for (auto& move : *moves)
+	for (auto& move : moves)
 	{
 		if (__stop) return max_score;
 

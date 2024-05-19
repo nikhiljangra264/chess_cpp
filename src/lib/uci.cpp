@@ -173,6 +173,7 @@ limits_t UCI::parse_limits(std::istringstream& is)
             throw std::invalid_argument("Warning: Unknown token\n");
         }
     }
+    limits.movetime -= OVERHEAD_TIME;
 
     return limits;
 }
