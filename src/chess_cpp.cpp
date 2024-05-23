@@ -1,29 +1,34 @@
-﻿// chess_cpp.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
-// ok
-
-#include <iostream>
-#include <string>
-
-#include "lib/uci.h"
+﻿#include "lib/uci.h"
+#include "lib/hashing.h"
+#include "lib/misc.h"
 
 int main(int argc, char const* argv[])
 {
-    // uci instance
-    UCI game;
-    std::string line;
-
-    for (int i = 1; i < argc; i++) {
-        line = argv[i];
-        game.processCommand(line);
-    }
-
-    while (std::getline(std::cin, line))
+    if(argc > 1 && argv[1] == "LOG")
     {
-        game.processCommand(line);
-        if (line == "quit")
-            break;
+        LOG::LOGGING = true;
+        if (argc > 2)
+            LOG::open_log_file(std::string(argv[2]));
+        else
+            LOG::open_log_file();
+        argc = 1;
     }
-    return 0;
+    // uci instance
+    UCI uci;
+
+    try {
+        LOG::log_info("Initializing engine...");
+        Zobrist::init_zobrist_hash();
+        LOG::log_info("starting engine.");
+        uci.loop(argc, argv);
+    }
+    catch (const std::exception& e) {
+        LOG::log_error(std::string(e.what()));
+        LOG::shutdown();
+        return EXIT_FAILURE;
+    }
+
+    LOG::shutdown();
+
+    return EXIT_SUCCESS;
 }

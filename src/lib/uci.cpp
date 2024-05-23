@@ -1,113 +1,196 @@
-#include <thread>
-#include <deque>
-#include <string>
 #include "uci.h"
+#include "misc.h"
+#include "tt.h"
+#include "evaluate.h"
 
 void UCI::stop() {
-    // stop engine and join thread
-    engine.stop = true;
-    if (thread != nullptr && thread->joinable()) {
+    // stop engine
+    engine.stop();
+
+    // Join the thread
+    if (thread && thread->joinable()) {
         thread->join();
+        thread.reset();
     }
-}
-
-void UCI::uci() {
-    output("id name chess_cpp");
-    output("id author Nikhil");
-    output("");
-    output("option name Move Overhead type spin default 5 min 0 max 5000");
-    //output("option name Ponder type check default false");
-    output("uciok");
-}
-
-void UCI::isready() {
-    output("readyok");
-}
-
-void UCI::ucinewgame() {
-    // Do something for new game
 }
 
 void UCI::eval() {
-    std::string e = std::to_string(eval::evaluate(board));
-    output(e);
+    std::string e = std::to_string(Eval::evaluate(board));
+    sync_cout << e << sync_endl;
 }
 
+void UCI::loop(int argc, const char* argv[])
+{
+    std::string token, cmd;
+    
+    for (int i = 1; i < argc; ++i)
+        cmd += std::string(argv[i]) + " ";
 
-void UCI::processCommand(const std::string& input) {
-
-    if (input.size() == 0) return;
-
-    std::deque<std::string> command(1, std::string());
-
-    // split the command
-    for (int j = 0; j < input.size(); j++)
+    do
     {
-        if (input[j] == ' ') command.push_back(std::string());
-        else command.back().push_back(input[j]);
-    }
+        if (LOG::LOGGING)
+            LOG::log_info("command received: " + cmd);
 
-    if (command[0] == "quit") {
-        stop();
-    }
-    else if (command[0] == "stop") {
-        stop();
-        engine.reset();
-    }
-    else if (command[0] == "ucinewgame") {
-        ucinewgame();
-    }
-    else if (command[0] == "uci") {
-        uci();
-    }
-    else if (command[0] == "isready") {
-        isready();
-    }
-    else if (command[0] == "setoption") {
-        // Implement setoption
-    }
-    else if (command[0] == "position") {
-        board.init_fen(command);
-    }
-    else if (command[0] == "print") {
-        std::cout << board << std::endl;
-    }
-    else if (command[0] == "go") {
-        engine.reset();
-        for (int index = 1; index < command.size(); index++)
+        std::istringstream is(cmd);
+
+        token.clear();
+        is >> std::skipws >> token;
+
+        if (token == "quit")
         {
-            if (command[index] == "depth")
-            {
-                engine.max_depth = std::stoi(command[index++ + 1]);
-                if (engine.max_depth == 0) throw std::invalid_argument("depth value 0!");
-            }
-            else if (command[index] == "nodes")
-            {
-                engine.max_nodes = std::stoi(command[index++ + 1]);
-                if (engine.max_nodes == 0) throw std::invalid_argument("nodes value 0!");
-            }
-            else if (command[index] == "movetime")
-                engine.max_time = std::stoi(command[index++ + 1]);
-            else if (command[index] == "wtime" && board.side_to_move() == WHITE)
-                engine.max_time = std::stoi(command[index++ + 1]);
-            else if (command[index] == "btime" && board.side_to_move() == BLACK)
-                engine.max_time = std::stoi(command[index++ + 1]);
-            else if (command[index] == "winc" && board.side_to_move() == WHITE)
-                engine.max_time += std::stoi(command[index++ + 1]);
-            else if (command[index] == "binc" && board.side_to_move() == BLACK)
-                engine.max_time += std::stoi(command[index++ + 1]);
+            stop();
+            break;
+        }
+        else if (token == "stop")
+            stop();
+
+        else if (token == "uci")
+            sync_cout << "id name chesscpp_3" << "\n"
+            << "id author Nikhil" << "\n"
+            << "option name Hash type spin default 128 min 1 max 65536\n"
+            << "uciok" << sync_endl;
+
+        else if (token == "go")
+            go(is);
+
+        else if (token == "position")
+            position(is);
+
+        else if (token == "setoption")
+            setoptions(is);
+
+        else if (token == "ucinewgame")
+            engine.reset();
+
+        else if (token == "isready")
+            sync_cout << "readyok" << sync_endl;
+
+        // Add custom non-UCI commands, mainly for debugging purposes.
+        // These commands must not be used during a search!
+        else if (token == "eval")
+            eval();
+
+        else if (token == "print")
+            sync_cout << board << sync_endl;
+
+        else if (token == "--help" || token == "help" || token == "--license" || token == "license")
+            sync_cout
+            << "\nchess_cpp uses UCI protocol to communicate with a GUI, an API, etc."
+            << "\nTry position, go, uci, readyok command"
+            << "\nType quit to exit the engine."
+            << "\nFor any further information, visit https://github.com/nikhiljangra264/chess_cpp#readme"
+            << sync_endl;
+
+        else if (!token.empty())
+            sync_cout << "Unknown command: '" << cmd << "'. Type help for more information."
+            << sync_endl;
+
+        if (!std::getline(std::cin, cmd))
+        {
+            token = "quit";
+            stop();
         }
 
-        engine.stop = false;
+    } while (token != "quit");
+}
 
-        if (thread && thread->joinable()) {
-            thread->join();
-            delete thread; // Clean up the previous thread
+void UCI::position(std::istringstream& is)
+{
+    std::string token, fen;
+
+    is >> token;
+
+    if (token == "startpos")
+    {
+        fen = StartFEN;
+        is >> token;
+    }
+    else
+    {
+        while (is >> token && token != "moves")
+            fen += token + " ";
+    }
+
+    std::vector<std::string> moves;
+
+    while (is >> token)
+    {
+        moves.push_back(token);
+    }
+
+    board.set_position(fen, moves);
+}
+
+void UCI::go(std::istringstream& is)
+{
+    if (thread)
+        stop();
+    limits_t limits = parse_limits(is);
+    std::lock_guard<std::mutex> lock(engine_mutex);
+    thread = std::make_unique<std::thread>([this, limits]() { engine.go(board, limits); });
+}
+
+void UCI::setoptions(std::istringstream& is)
+{
+    // if engine running donot update the options
+    std::lock_guard<std::mutex> lock(engine_mutex);
+
+    options_t options;
+    std::string token, name;
+
+    while (is >> token)
+    {
+        if (token == "name")
+        {
+            is >> name;
+            if (name == "Hash")
+            {
+                is >> token; // value
+                if (!(is >> token)) {
+                    options.tt_size = TT::DEFAULT_TT_SIZE;
+                    LOG::log_error("Invalid value for tt size");
+                }
+            }
         }
-        // Create a new thread and execute it
-        thread = new std::thread([this]() { engine.search(); });
     }
-    else if (command[0] == "eval") {
-        eval();
+    engine.set_options(options.tt_size);
+}
+
+limits_t UCI::parse_limits(std::istringstream& is)
+{
+    limits_t limits;
+    std::string token;
+
+    // start time as early as possible
+    limits.start_time = std::chrono::high_resolution_clock::now();
+
+    while (is >> token)
+    {
+        if (token == "depth")
+        {
+            if (!(is >> limits.depth))
+            {
+                limits.depth = MAX_DEPTH;
+                LOG::log_error("Invalid depth value");
+            }
+        }
+        else if (token == "nodes")
+        {
+            if (!(is >> limits.nodes))
+            {
+                limits.nodes = MAX_NODES;
+                LOG::log_error("Invalid value for nodes");
+            }
+        }
+        else if (token == "movetime")
+        {
+            if (!(is >> limits.movetime))
+            {
+                limits.nodes = MAX_TIME;
+                LOG::log_error("Invalid value for movetime");
+            }
+        }
     }
+    // limits.movetime -= OVERHEAD_TIME;
+    return limits;
 }

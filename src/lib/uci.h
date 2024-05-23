@@ -1,55 +1,50 @@
-#pragma once
-
-// ok
+#ifndef UCI_H
+#define UCI_H
 
 // External
 #include <thread>
-#include <vector>
+#include <sstream>
 
 // Internal
-#include "header.h"
-#include "evaluate.h"
 #include "board.h"
-#include "engine.h"
+#include "search.h"
 
 /// <summary>
-/// implementation of UCI protocols
-/// handle the engineimplement UCI protocols
-/// currently supported commands are
-/// uci->display information about engine
-/// stop, quit, isready->does what you think
-/// print->print the board
-/// position->set the current position in the board syntax position[startpos | fen] moves <moves1> <moves2> ...
-/// eval -> return evaluation score of current board
-/// go->start the engine to caculate best move
+/// Implementation of UCI protocols.
+/// Handles the engine's interaction with UCI, API or USER.
+/// Currently supported commands are:
+///   - uci: Display information about the engine.
+///   - stop, quit, isready: Perform the expected actions.
+///   - position: Set the current position on the board. Syntax: position [startpos | fen] moves (moves1) (moves2) ...
+///   - go: Start the engine to calculate the best move.
+///   - print: Print the board (for debugging).
+///   - eval: Return the evaluation score of the current board (for debugging).
 /// </summary>
 class UCI {
-private:
-    board_t board;
-    Engine engine;
-    std::thread* thread;
-
 public:
-    UCI() : thread(nullptr), engine(board) {}
+	UCI() : thread(nullptr) {}
 
-    void output(const std::string& s) {
-        std::cout << s << std::endl;
-        std::cout.flush();
-    }
+	void loop(int argc, const char* argv[]);        // main loop
+	void position(std::istringstream& is);          // set up position on board
+	void go(std::istringstream& is);                // start the engine
+	limits_t parse_limits(std::istringstream& is);	// parse the limits
+	void setoptions(std::istringstream& is);		// parse the options
 
-    void stop();
-    void uci();
-    void isready();
-    void ucinewgame();
+	void stop();
+	void eval();
 
-    void eval();
+	~UCI() {
+		if (thread && thread->joinable()) {
+			thread->join();
+		}
+	}
 
-    void processCommand(const std::string& input);
-
-    ~UCI() {
-        if (thread && thread->joinable()) {
-            thread->join();
-            delete thread;
-        }
-    }
+private:
+	board_t board;
+	Search engine;
+	std::unique_ptr<std::thread> thread;
+	std::mutex engine_mutex;
 };
+
+
+#endif // UCI_H

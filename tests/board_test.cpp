@@ -18,8 +18,12 @@ protected:
 
 
 TEST_F(BoardTest, make_unmake_moves) {
+    Zobrist::init_zobrist_hash();
+
     // test making and unmaking move
     board_t board_make, final_position, starting_position;
+    starting_position.set_position(StartFEN);
+    board_make.set_position(StartFEN);
 
     // Apply the specified moves to the board
     Move move1{square_t(1, 4), square_t(3, 4)};                     // e2e4
@@ -40,100 +44,75 @@ TEST_F(BoardTest, make_unmake_moves) {
     Move move16{square_t(7, 2), square_t(7, 1)};                    // c8b8
     Move move17{square_t(5, 5), square_t(6, 6), B_PAWN};            // f6g7
     Move move18{square_t(7, 1), square_t(7, 0)};                    // b8a8
-    Move move19{square_t(6, 6), square_t(7, 5), B_BISHOP, W_QUEEN}; // g7f8q
+    Move move19{square_t(6, 6), square_t(7, 5), B_BISHOP, W_QUEEN}; // g7f8q (promotion)
 
 
     // Make moves
-    board_make.make_move(move1);
-    board_make.make_move(move2);
-    board_make.make_move(move3);
-    board_make.make_move(move4);
-    board_make.make_move(move5);
-    board_make.make_move(move6);
-    board_make.make_move(move7);
-    board_make.make_move(move8);
-    board_make.make_move(move9);
-    board_make.make_move(move10);
-    board_make.make_move(move11);
-    board_make.make_move(move12);
-    board_make.make_move(move13);
-    board_make.make_move(move14);
-    board_make.make_move(move15);
-    board_make.make_move(move16);
-    board_make.make_move(move17);
-    board_make.make_move(move18);
-    board_make.make_move(move19);
+    board_make.push(move1);
+    board_make.push(move2);
+    board_make.push(move3);
+    board_make.push(move4);
+    board_make.push(move5);
+    board_make.push(move6);
+    board_make.push(move7);
+    board_make.push(move8);
+    board_make.push(move9);
+    board_make.push(move10);
+    board_make.push(move11);
+    board_make.push(move12);
+    board_make.push(move13);
+    board_make.push(move14);
+    board_make.push(move15);
+    board_make.push(move16);
+    board_make.push(move17);
+    board_make.push(move18);
+    board_make.push(move19);
 
-    std::cout << board_make.board_state.halfmove_count;
-
-    std::deque<std::string> fen = {"position","fen","k2r1Q1r/ppp1pp1p/2nq4/8/8/2N5/PPPP1P1P/R1BQKb1R","b","KQ--","-","1","4"};
-    final_position.init_fen(fen);
+    std::string fen = "k2r1Q1r/ppp1pp1p/2nq4/8/8/2N5/PPPP1P1P/R1BQKb1R b KQ-- - 1 4";
+    final_position.set_position(fen);
 
     EXPECT_EQ(board_make, final_position);
 
     // Unmake moves
-    board_make.unmake_move(move19);
-    board_make.unmake_move(move18);
-    board_make.unmake_move(move17);
-    board_make.unmake_move(move16);
-    board_make.unmake_move(move15);
-    board_make.unmake_move(move14);
-    board_make.unmake_move(move13);
-    board_make.unmake_move(move12);
-    board_make.unmake_move(move11);
-    board_make.unmake_move(move10);
-    board_make.unmake_move(move9);
-    board_make.unmake_move(move8);
-    board_make.unmake_move(move7);
-    board_make.unmake_move(move6);
-    board_make.unmake_move(move5);
-    board_make.unmake_move(move4);
-    board_make.unmake_move(move3);
-    board_make.unmake_move(move2);
-    board_make.unmake_move(move1);
-    // setting castling rights manually
-    // we have to handle castling rights manually in game
-    board_make.board_state = starting_position.board_state;
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
+    board_make.pop();
 
     // Compare the resulting board state with the starting board state
     EXPECT_EQ(board_make, starting_position);
 }
 
-TEST_F(BoardTest, setting_board_with_fen) {
+TEST_F(BoardTest, double_pawn_push) {
     // test setting board with fen
+    Zobrist::init_zobrist_hash();
 
     // setup starting position on the board
-    board_t starting_board, board;
-    std::deque<std::string> starting_fen_1 = {"position","startpos"};
-    std::deque<std::string> starting_fen_2 = {"position","fen","rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR","w","KQkq","-","0","1"};
+    board_t board1, board2,board3;
+    std::string starting_fen_1 = StartFEN;
+    std::vector<std::string> moves = { "e2e4" };
+    std::string starting_fen_2 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
 
-    board.init_fen(starting_fen_1);
-    EXPECT_EQ(starting_board, board);
+    board1.set_position(starting_fen_1, moves);
+    board2.set_position(starting_fen_2);
+    EXPECT_EQ(board1, board2);
 
-    board.init_fen(starting_fen_2);
-    EXPECT_EQ(starting_board, board);
-
-/*
-    // advanced
-    board_t board_1, board_2;
-    // make advanced moves
-    std::deque<std::string> fen_1 = {"position","startpos ","oves","e4","e5","Nf3","Nc6","Bb5","a6","Ba4","Nf6","O-O","Be7","Re1","b5","Bb3","d6","c3","O-O","h3","Na5","Bc2","c5","d4","Qc7","Nbd2","cxd4","cxd4","Nc6","Nb3","a5","Be3","Bd7"};
-    std::deque<std::string> fen_2 = {"position","fen","r1bq1rk1/1ppnbppp/p1n1p3/3pP3/3P1P2/2N1BN2/PPP1B1PP/R2Q1RK1","w","-","-","0","17"};
-
-    board_1.init_fen(fen_1);
-    board_2.init_fen(fen_2);
-    EXPECT_EQ(board_1, board_2);
-*/
-    // Test making moves
-    // Add your assertions here to verify the correctness of move making
-    // For example:
-    // Move move = ...; // Create a move object
-    // board.make_move(move);
-    // EXPECT_EQ(board.piece_at(destination_square), expected_piece);
-
-    // Test unmaking moves
-    // Add your assertions here to verify the correctness of move unmaking
-    // For example:
-    // board.unmake_move(move);
-    // EXPECT_EQ(board.piece_at(start_square), moved_piece);
+    board3.set_position(starting_fen_1);
+    board1.pop();
+    EXPECT_EQ(board1, board3);
 }

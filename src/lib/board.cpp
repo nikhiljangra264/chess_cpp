@@ -1,31 +1,33 @@
 #include "board.h"
+#include "hashing.h"
+#include "move.h"
+#include "tt.h"
+#include "misc.h"
+#include <sstream>
 
-board_t::board_t(board_t &&other) noexcept
+void board_t::push(const Move& m)
 {
-	board = std::move(other.board);
-	turn = other.turn;
-	board_state = other.board_state;
-	white_king = other.white_king;
-	black_king = other.black_king;
-}
+	// check for null move
+	if (m == NULL_MOVE)
+	{
+		make_null_move();
+		return;
+	}
 
-void board_t::operator=(board_t &&other) noexcept
-{
-	board = std::move(other.board);
-	turn = other.turn;
-	board_state = other.board_state;
-	white_king = other.white_king;
-	black_king = other.black_king;
-}
-
-void board_t::make_move(Move &m)
-{
 	Piece moving_piece = piece_at(m.from);
+
+	// push to the history
+	history.push(m, board_state, key);
+	
+	// en passant key
+	if (board_state.ep_square != INVALID_SQ)
+		key ^= Zobrist::en_passant_keys[(board_state.ep_square.rank == 2) ? 0 : 1][board_state.ep_square.file];
+	// reset en passant
+	board_state.ep_square = INVALID_SQ;
+
 	// reset halfmove count if irreversible move
 	if (m.capture != EMPTY || m.promotion_or_enpassant)
 		board_state.halfmove_count = 0;
-	// reset en passant
-	board_state.ep_square = INVALID_SQ;
 
 	// king moves
 	if (is_king(moving_piece))
@@ -34,25 +36,39 @@ void board_t::make_move(Move &m)
 		if (turn == WHITE) white_king = m.to;
 		else black_king = m.to;
 
+		// update hash with previous castling rights
+		key ^= Zobrist::castling_rights_keys[board_state.rights];
+
 		// revoke rights
 		board_state.revoke_castling_rights(turn);
 
 		// if king is jumping more than one square than castling
-		// queen side castling
-		if (m.from.file == 4 && m.to.file == 2)
+		if (m.from.file == 4 && m.to.file == 2)		// queen side castling
 		{
-			board[m.to.rank][0] = EMPTY;
-			board[m.to.rank][3] = (turn == WHITE) ? W_ROOK : B_ROOK;
-			board_state.halfmove_count = 0;
-		}
-		if (m.from.file == 4 && m.to.file == 6)
-		{
-			board[m.to.rank][7] = EMPTY;
-			board[m.to.rank][5] = (turn == WHITE) ? W_ROOK : B_ROOK;
-			board_state.halfmove_count = 0;
-		}
+			// update hash for rook move
+			key ^= Zobrist::piece_keys[board[m.to.rank][0]][m.to.rank][0];
+			key ^= Zobrist::piece_keys[board[m.to.rank][0]][m.to.rank][3];
 
+			board[m.to.rank][3] = board[m.to.rank][0];
+			board[m.to.rank][0] = EMPTY;
+			board_state.halfmove_count = 0;
+		}
+		if (m.from.file == 4 && m.to.file == 6)		// king side castling
+		{
+			key ^= Zobrist::piece_keys[board[m.to.rank][7]][m.to.rank][7];
+			key ^= Zobrist::piece_keys[board[m.to.rank][7]][m.to.rank][5];
+
+			board[m.to.rank][5] = board[m.to.rank][7];
+			board[m.to.rank][7] = EMPTY;
+			board_state.halfmove_count = 0;
+		}
 		board[m.to.rank][m.to.file] = moving_piece;
+
+		// update hash
+		key ^= Zobrist::castling_rights_keys[board_state.rights];
+		if(m.capture != EMPTY)
+			key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+		key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 	}
 
 	// pawn moves
@@ -60,23 +76,40 @@ void board_t::make_move(Move &m)
 	{
 		board_state.halfmove_count = 0;
 
-		// en passant if attacking and there is no piece
+		// en passant
 		if (m.from.file != m.to.file && !is_sq_occ(m.to))
 		{
 			board[m.from.rank][m.to.file] = EMPTY;
 			board[m.to.rank][m.to.file] = moving_piece;
+
+			key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
+			key ^= Zobrist::piece_keys[m.capture][m.from.rank][m.to.file];
 		}
 		// double pawn push
 		else if (m.to.rank == m.from.rank + 2 * turn)
 		{
-			board_state.ep_square = m.to;
+			board_state.ep_square = { m.from.rank + turn, m.from.file };
 			board[m.to.rank][m.to.file] = moving_piece;
+
+			key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 		}
 		// promotion
-		else if (m.to.rank == 7 || m.to.rank == 0)
-			board[m.to.rank][m.to.file] = Piece(m.promotion_or_enpassant);
+		else if (m.to.rank == TOTAL_RANK - 1 || m.to.rank == 0)
+		{
+			board[m.to.rank][m.to.file] = static_cast<Piece>(m.promotion_or_enpassant);
+
+			if(m.capture != EMPTY)
+				key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+			key ^= Zobrist::piece_keys[board[m.to.rank][m.to.file]][m.to.rank][m.to.file];
+		}
 		else
+		{
 			board[m.to.rank][m.to.file] = moving_piece;
+
+			if(m.capture != EMPTY)
+				key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+			key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
+		}
 	}
 	// rook moves revokes the castling rights
 	else if (is_rook(moving_piece))
@@ -84,34 +117,57 @@ void board_t::make_move(Move &m)
 		// update castling rights
 		if (board_state.rights)
 		{
+			key ^= Zobrist::castling_rights_keys[board_state.rights];
 			if (turn == WHITE)
 			{
-				if (m.from.file == 0)		board_state.set_wking_castle_queen(false);
-				else if (m.from.file == 7)	board_state.set_wking_castle_king(false);
+				if (m.from.file == 0)				board_state.set_wking_castle_queen(false);
+				else if (m.from.file == TOTAL_FILE)	board_state.set_wking_castle_king(false);
 			}
 			else
 			{
-				if (m.from.file == 0)		board_state.set_bking_castle_queen(false);
-				else if (m.from.file == 7)	board_state.set_bking_castle_king(false);
+				if (m.from.file == 0)				board_state.set_bking_castle_queen(false);
+				else if (m.from.file == TOTAL_FILE)	board_state.set_bking_castle_king(false);
 			}
+			key ^= Zobrist::castling_rights_keys[board_state.rights];
 		}
 		board[m.to.rank][m.to.file] = moving_piece;
+
+		if(m.capture != EMPTY)
+			key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+		key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 	}
 	else
 	{
 		board[m.to.rank][m.to.file] = moving_piece;
+
+		if(m.capture != EMPTY)
+			key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+		key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 	}
 
-	// change turn
+	// change turn and update halfmove count
 	turn = static_cast<COLOR>(-turn);
 	board_state.halfmove_count++;
+	key ^= Zobrist:: side_to_move_key;
+
 	board[m.from.rank][m.from.file] = EMPTY;
+	// update hash for from square
+	key ^= Zobrist::piece_keys[moving_piece][m.from.rank][m.from.file];
+
+	// update hash for en passant
+	if (board_state.ep_square != INVALID_SQ)
+		key ^= Zobrist::en_passant_keys[(board_state.ep_square.rank == 2) ? 0 : 1][board_state.ep_square.file];
 }
 
-void board_t::unmake_move(Move &m)
+void board_t::pop()
 {
+	if (history.empty())
+		return;
+
 	// the turn variable is updated
 	turn = static_cast<COLOR>(-turn);
+
+	Move m = history.get_last_move();
 	Piece moving_piece = piece_at(m.to);
 
 	// king moves
@@ -122,18 +178,16 @@ void board_t::unmake_move(Move &m)
 		else black_king = m.from;
 
 		// if king is jumping more than one square than castling
-		// queen side castling
-		if (m.from.file == 4 && m.to.file == 2)
+		if (m.from.file == 4 && m.to.file == 2)		// queen side castling
 		{
+			board[m.to.rank][0] = board[m.to.rank][3];
 			board[m.to.rank][3] = EMPTY;
-			board[m.to.rank][0] = (turn == WHITE) ? W_ROOK : B_ROOK;
 		}
-		if (m.from.file == 4 && m.to.file == 6)
+		if (m.from.file == 4 && m.to.file == 6)		// king side castling
 		{
+			board[m.to.rank][7] = board[m.to.rank][5];
 			board[m.to.rank][5] = EMPTY;
-			board[m.to.rank][7] = (turn == WHITE) ? W_ROOK : B_ROOK;
 		}
-
 		board[m.to.rank][m.to.file] = m.capture;
 		board[m.from.rank][m.from.file] = moving_piece;
 	}
@@ -157,7 +211,7 @@ void board_t::unmake_move(Move &m)
 	}
 
 	// check for promotion moves
-	else if ((m.to.rank == 7 || m.to.rank == 0) && m.promotion_or_enpassant)
+	else if ((m.to.rank == TOTAL_RANK-1 || m.to.rank == 0) && m.promotion_or_enpassant)
 	{
 		board[m.from.rank][m.from.file] = (turn == WHITE) ? W_PAWN : B_PAWN;
 		board[m.to.rank][m.to.file] = m.capture;
@@ -168,11 +222,16 @@ void board_t::unmake_move(Move &m)
 		board[m.to.rank][m.to.file] = m.capture;
 		board[m.from.rank][m.from.file] = moving_piece;
 	}
+	
+	board_state = history.get_last_board_state();
+	key = history.get_last_key();
+	// pop
+	history.pop();
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq) 
+MOVES board_t::get_psuedo_legal_move_pawn(square_t sq)
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	square_t to{sq.rank, sq.file};
 
@@ -225,18 +284,18 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 			moves.push_back(Move(sq, to, piece_at(to)));
 
 		// en passant
-		if (board_state.ep_square != INVALID_SQ && 
-			board_state.ep_square.rank == sq.rank && 
+		if (board_state.ep_square != INVALID_SQ &&
+			board_state.ep_square.rank == sq.rank + color &&
 			(board_state.ep_square.file == sq.file - 1 || board_state.ep_square.file == sq.file + 1))
-			moves.push_back(Move(sq, {sq.rank + color, board_state.ep_square.file}, piece_at(board_state.ep_square), true));
+			moves.push_back(Move(sq, board_state.ep_square, piece_at(sq.rank, board_state.ep_square.file), true));
 	}
 
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_knight(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
@@ -250,9 +309,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_bishop(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : BISHOP_DIRECTIONS)
@@ -279,9 +338,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_rook(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : ROOK_DIRECTIONS)
@@ -308,17 +367,17 @@ std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq)
+MOVES board_t::get_psuedo_legal_move_queen(square_t sq) const
 {
-	std::deque<Move> bishop_moves = std::move(get_psuedo_legal_move_bishop(sq));
-	std::deque<Move> rook_moves = std::move(get_psuedo_legal_move_rook(sq));
+	MOVES bishop_moves = std::move(get_psuedo_legal_move_bishop(sq));
+	MOVES rook_moves = std::move(get_psuedo_legal_move_rook(sq));
 	rook_moves.insert(rook_moves.end(), std::make_move_iterator(bishop_moves.begin()), std::make_move_iterator(bishop_moves.end()));
 	return rook_moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_king(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	// simple moves
 	for (auto &dir : ALL_DIRECTIONS)
@@ -348,9 +407,56 @@ std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 	return moves;
 }
 
+MOVES board_t::get_psuedo_legal_moves()
+{
+	MOVES moves;
+
+	for (u8 rank = 0; rank < TOTAL_RANK; ++rank)
+	{
+		for (u8 file = 0; file < TOTAL_FILE; ++file)
+		{
+			// if square is empty or different color
+			if (piece_at(rank, file) == EMPTY || piece_color(piece_at(rank, file)) != turn)
+				continue;
+			else if (is_pawn(piece_at(rank, file)))
+			{
+				MOVES temp = std::move(get_psuedo_legal_move_pawn({ rank, file }));
+				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+			}
+			else if (is_knight(piece_at(rank, file)))
+			{
+				MOVES temp = std::move(get_psuedo_legal_move_knight({ rank, file }));
+				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+			}
+			else if (is_bishop(piece_at(rank, file)))
+			{
+				MOVES temp = std::move(get_psuedo_legal_move_bishop({ rank, file }));
+				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+			}
+			else if (is_rook(piece_at(rank, file)))
+			{
+				MOVES temp = std::move(get_psuedo_legal_move_rook({ rank, file }));
+				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+			}
+			else if (is_queen(piece_at(rank, file)))
+			{
+				MOVES temp = std::move(get_psuedo_legal_move_queen({ rank, file }));
+				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+			}
+			else
+			{
+				MOVES temp = std::move(get_psuedo_legal_move_king({ rank, file }));
+				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
+			}
+		}
+	}
+
+	return moves;
+}
+
 bool board_t::is_sq_attacked_by(square_t sq, COLOR color) const
 {
-	square_t to;
+	square_t to = INVALID_SQ;
 
 	// check for pawn
 	to = {sq.rank - color, sq.file + 1};
@@ -359,6 +465,14 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color) const
 	to.file -= 2;
 	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		return true;
+
+	// check for king
+	for (auto& dir : ALL_DIRECTIONS)
+	{
+		to = { sq.rank + dir[0], sq.file + dir[1] };
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_king(piece_at(to)))
+			return true;
+	}
 
 	// Check for knight
 	for (auto &dir : KNIGHT_DIRECTIONS)
@@ -415,7 +529,7 @@ bool board_t::is_sq_attacked_by(square_t sq, COLOR color) const
 std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color) const
 {
 	std::deque<square_t> squares;
-	square_t to;
+	square_t to = INVALID_SQ;
 	// Check orthogonally for queen or rook of opposite color
 	for (auto &dir : ROOK_DIRECTIONS)
 	{
@@ -468,296 +582,247 @@ std::deque<square_t> board_t::sq_attacked_by(square_t sq, COLOR color) const
 	to.file -= 2;
 	if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_pawn(piece_at(to)))
 		squares.push_back(to);
+	// check for king
+	for (auto& dir : ALL_DIRECTIONS)
+	{
+		to = { sq.rank + dir[0], sq.file + dir[1] };
+		if (to.inbound() && is_sq_occ(to) && piece_color(piece_at(to)) == color && is_king(piece_at(to)))
+			squares.push_back(to);
+	}
 
 	return squares;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_moves()
+void board_t::set_position(const std::string& fen, const std::vector<std::string>& moves)
 {
-	std::deque<Move> moves;
-
-	for (int rank = 0; rank < 8; rank++)
-	{
-		for (int file = 0; file < 8; file++)
-		{
-			// if square is empty or different color
-			if (piece_at(rank, file) == EMPTY || piece_color(piece_at(rank, file)) != turn)
-				continue;
-			else if (is_pawn(piece_at(rank, file)))
-			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_pawn({ rank, file }));
-				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
-			}
-			else if (is_knight(piece_at(rank, file)))
-			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_knight({ rank, file }));
-				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
-			}
-			else if (is_bishop(piece_at(rank, file)))
-			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_bishop({ rank, file }));
-				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
-			}
-			else if (is_rook(piece_at(rank, file)))
-			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_rook({ rank, file }));
-				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
-			}
-			else if (is_queen(piece_at(rank, file)))
-			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_queen({ rank, file }));
-				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
-			}
-			else
-			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_king({ rank, file }));
-				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
-			}
-		}
-	}
-
-	return moves;
-}
-
-void board_t::init_startpos()
-{
-	board = STARTING_POSITION;
-	turn = WHITE;
-	board_state.rights = 15;
-	board_state.ep_square = INVALID_SQ;
-	white_king = {0, 4};
-	black_king = {7, 4};
-}
-
-void board_t::init_fen(std::deque<std::string> &command)
-{
+	std::istringstream ss(fen);
 	reset();
-	int i = 1;
-	if (command[i] == "startpos")
+
+	/*
+	expected sequence of arrived fen is
+	board    turn    castling_rights        en passant        half_moves        full_moves
+	*/
+	std::string token;
+
+	// Board setup
+	if (!(ss >> token))
+		throw std::invalid_argument("Invalid FEN: missing board part");
+	init_fen(token);
+
+	// Turn
+	if (!(ss >> token))
 	{
-		init_startpos();
-		i++;
+		LOG::log_error("Invalid FEN: missing turn part");
+		turn = WHITE;
+	}
+	else if (token == "w")
+		turn = WHITE;
+	else
+		turn = BLACK;
+
+	// Castling rights
+	if (!(ss >> token))
+		LOG::log_error("Invalid FEN: missing castling rights part");
+	board_state.set_castling_rights(token);
+
+	// En passant
+	if (!(ss >> token))
+	{
+		LOG::log_error("Invalid FEN: missing en passant part");
+		board_state.ep_square = INVALID_SQ;
+	}
+	if (token != "-")
+	{
+		if (token.size() != 2 || token[0] < 'a' || token[0] > 'h' || token[1] < '1' || token[1] > '8')
+			throw std::invalid_argument("Invalid FEN: invalid en passant square");
+		board_state.ep_square.file = token[0] - 'a';
+		board_state.ep_square.rank = token[1] - '1';
 	}
 	else
 	{
-		i++;
-		fen_to_board(command[i++]);
-		turn = (command[i++] == "w") ? WHITE : BLACK;
-		board_state.set_castling_rights(command[i++]);
-
-		square_t temp = uci_to_sq(command[i]);
-		if (command[i].size() != 1)
-			temp.rank = temp.rank - turn;
-		board_state.ep_square = temp;
-		board_state.halfmove_count = std::stoi(command[++i]);
-		// 7 is full move count
-		i = 8;
+		board_state.ep_square = INVALID_SQ;
 	}
 
-	// skipping moves command
-	i++;
-	while (i < command.size())
+	// Half move count
+	if (!(ss >> token))
 	{
-		auto m = uci_to_move(command[i]);
-		// null move
-		if (m.from == INVALID_SQ || m.to == INVALID_SQ)
-			make_null_move();
-		else
-			make_move(m);
-		i++;
+		LOG::log_error("Invalid FEN: missing half move count");
+		board_state.halfmove_count = 0;
+	}
+	board_state.halfmove_count = std::stoi(token);
+
+	// init key
+	init_key();
+
+	// Apply moves
+	for (const std::string& move : moves)
+	{
+		if (move.size() < 4 || move.size() > 5)
+			throw std::invalid_argument("Invalid move format: " + move);
+		Move m = uci_to_move(move);
+		push(m);
 	}
 }
 
-void board_t::fen_to_board(std::string &fen)
+void board_t::init_fen(const std::string& fen)
 {
-	int rank = 7, file = -1;
-	for (auto &c : fen)
+	int rank = TOTAL_RANK - 1, file = 0; // Initialize rank and file
+	for (char c : fen)
 	{
+		if (rank < 0 || file > TOTAL_FILE) // Check if board boundaries are exceeded
+			throw std::invalid_argument("Invalid FEN: Board setup exceeds boundaries");
+
 		if (c == '/')
 		{
-			rank -= 1;
-			file = -1;
+			// Move to the next rank
+			rank--;
+			file = 0; // Reset file to 0 for the next rank
 		}
 		else if (isdigit(c))
 		{
 			file += c - '0';
-		}
-		else if (c == W_PAWN_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = W_PAWN;
-		}
-		else if (c == B_PAWN_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = B_PAWN;
-		}
-		else if (c == W_KNIGHT_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = W_KNIGHT;
-		}
-		else if (c == B_KNIGHT_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = B_KNIGHT;
-		}
-		else if (c == W_BISHOP_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = W_BISHOP;
-		}
-		else if (c == B_BISHOP_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = B_BISHOP;
-		}
-		else if (c == W_ROOK_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = W_ROOK;
-		}
-		else if (c == B_ROOK_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = B_ROOK;
-		}
-		else if (c == W_QUEEN_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = W_QUEEN;
-		}
-		else if (c == B_QUEEN_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = B_QUEEN;
-		}
-		else if (c == W_KING_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = W_KING;
-		}
-		else if (c == B_KING_SYMBOL)
-		{
-			file += 1;
-			board[rank][file] = B_KING;
-		}
-	}
-}
-
-Move board_t::uci_to_move(const std::string &move) const
-{
-	Piece promotion = EMPTY;
-	// promotion
-	if (move.size() == 5)
-	{
-		if (turn == WHITE)
-		{
-			switch (move[5])
+			if (file > TOTAL_FILE)
 			{
-			case 'q':
-				promotion = W_QUEEN;
-				break;
-			case 'n':
-				promotion = W_KNIGHT;
-				break;
-			case 'b':
-				promotion = W_BISHOP;
-				break;
-			case 'r':
-				promotion = W_ROOK;
-				break;
-			default:
-				break;
+				LOG::log_error("Invalid FEN: Too many empty squares in a rank");
+				file = 0;
 			}
 		}
 		else
 		{
-			switch (move[5])
+			// Piece symbols
+			Piece piece = EMPTY;
+			for (int i = 0; i < 13; ++i)
 			{
-			case 'q':
-				promotion = B_QUEEN;
-				break;
-			case 'n':
-				promotion = B_KNIGHT;
-				break;
-			case 'b':
-				promotion = B_BISHOP;
-				break;
-			case 'r':
-				promotion = B_ROOK;
-				break;
-			default:
-				break;
+				if (c == PieceSymbol[i])
+				{
+					piece = static_cast<Piece>(i);
+					break;
+				}
+			}
+			if (piece == EMPTY)
+				throw std::invalid_argument("Invalid FEN: Unknown piece symbol");
+
+			// Place the piece on the board
+			if (rank >= 0 && rank < TOTAL_RANK && file >= 0 && file < TOTAL_FILE)
+			{
+				board[rank][file] = piece;
+				file++; // Move to the next file
+			}
+			else
+			{
+				throw std::invalid_argument("Invalid FEN: Piece placement out of board boundaries");
 			}
 		}
 	}
+	if (rank != 0 || file != TOTAL_FILE)
+		throw std::invalid_argument("Invalid FEN: Incomplete board setup");
+}
 
-	// null move
-	if (move == "0000")
-		return Move();
+Move board_t::uci_to_move(const std::string& move) const
+{
+	Piece promotion = EMPTY;
 
-	square_t from{move[1] - '1', move[0] - 'a'};
-	square_t to{move[3] - '1', move[2] - 'a'};
+	// Null move
+	if (move == "0000" || move.size() < 4 || move.size() > 5)
+		return NULL_MOVE;
 
-	// check for en passant
+	// Check for promotion
+	if (move.size() == 5)
+	{
+		switch (move[4])
+		{
+		case 'q':
+			promotion = (turn == WHITE) ? W_QUEEN : B_QUEEN;
+			break;
+		case 'n':
+			promotion = (turn == WHITE) ? W_KNIGHT : B_KNIGHT;
+			break;
+		case 'b':
+			promotion = (turn == WHITE) ? W_BISHOP : B_BISHOP;
+			break;
+		case 'r':
+			promotion = (turn == WHITE) ? W_ROOK : B_ROOK;
+			break;
+		default:
+			LOG::log_error("invalid promotion character");
+			return NULL_MOVE;
+		}
+	}
+
+	square_t from{ move[1] - '1', move[0] - 'a' };
+	square_t to{ move[3] - '1', move[2] - 'a' };
+
+	// Check if source and destination squares are within the board boundaries
+	if (!from.inbound() || !to.inbound())
+		return NULL_MOVE;
+
+	// Check for en passant
+	// if pawn and attacking and attack square empty
 	if (is_pawn(piece_at(from)) && from.file != to.file && !is_sq_occ(to))
 		return Move(from, to, piece_at(from.rank, to.file), true);
 
 	return Move(from, to, piece_at(to), promotion);
 }
 
-std::ostream &operator<<(std::ostream &out, const board_t &_b)
+void board_t::init_key()
 {
-	for (int i = 7; i >= 0; --i)
+	key = 0;
+	// XOR all Zobrist keys for pieces on the starting board position
+	// Include additional information (e.g., side to move, castling rights, en passant square)
+
+	for (int rank = 0; rank < TOTAL_RANK; ++rank)
 	{
-		for (int j = 0; j < 8; ++j)
+		for (int file = 0; file < TOTAL_FILE; ++file)
 		{
-			switch (_b.board[i][j])
+			if (piece_at(rank, file) != EMPTY)
 			{
-			case EMPTY:
-				out << EMPTY_SYMBOL;
-				break;
-			case W_PAWN:
-				out << W_PAWN_SYMBOL;
-				break;
-			case W_KNIGHT:
-				out << W_KNIGHT_SYMBOL;
-				break;
-			case W_BISHOP:
-				out << W_BISHOP_SYMBOL;
-				break;
-			case W_ROOK:
-				out << W_ROOK_SYMBOL;
-				break;
-			case W_QUEEN:
-				out << W_QUEEN_SYMBOL;
-				break;
-			case W_KING:
-				out << W_KING_SYMBOL;
-				break;
-			case B_PAWN:
-				out << B_PAWN_SYMBOL;
-				break;
-			case B_KNIGHT:
-				out << B_KNIGHT_SYMBOL;
-				break;
-			case B_BISHOP:
-				out << B_BISHOP_SYMBOL;
-				break;
-			case B_ROOK:
-				out << B_ROOK_SYMBOL;
-				break;
-			case B_QUEEN:
-				out << B_QUEEN_SYMBOL;
-				break;
-			case B_KING:
-				out << B_KING_SYMBOL;
-				break;
+				key ^= Zobrist::piece_keys[piece_at(rank, file)][rank][file];
 			}
-			out << " ";
 		}
-		out << std::endl;
 	}
+	// side to move
+	if (turn == WHITE)
+		key ^= Zobrist::side_to_move_key;
+
+	// castling rights
+	key ^= Zobrist::castling_rights_keys[board_state.rights];
+
+	// en passant move
+	if (board_state.ep_square != INVALID_SQ)
+	{
+		if (board_state.ep_square.rank == 2)
+			key ^= Zobrist::en_passant_keys[0][board_state.ep_square.file];
+		else
+			key ^= Zobrist::en_passant_keys[1][board_state.ep_square.file];
+	}
+}
+
+std::ostream& operator<<(std::ostream& out, const board_t& _b)
+{
+	out << "\n";
+	for (int rank = TOTAL_RANK - 1; rank >= 0; --rank)
+	{
+		out << rank + 1 << "\t"; // Print rank number
+		for (int file = 0; file < TOTAL_FILE; ++file)
+		{
+			Piece piece = _b.piece_at(rank, file);
+			out << PieceSymbol[piece] << ' ';
+		}
+		out << '\n';
+	}
+	out << "\n\n\ta b c d e f g h\n"; // Print file labels
+	// print board stats
+	out << "en passant square: ";
+	if (_b.board_state.ep_square == INVALID_SQ)
+		out << "-\n";
+	else
+	out	<< static_cast<char>(_b.board_state.ep_square.file + 'a')
+		<< static_cast<char>(_b.board_state.ep_square.rank + '1') << "\n";
+	out << "castling rights: "
+		<< (_b.board_state.get_wking_castle_king() ? 'K' : '-')
+		<< (_b.board_state.get_wking_castle_queen() ? 'Q' : '-')
+		<< (_b.board_state.get_bking_castle_king() ? 'k' : '-')
+		<< (_b.board_state.get_bking_castle_queen() ? 'q' : '-') << '\n';
+	out << "turn: " << (_b.turn == WHITE ? 'W' : 'B') << '\n';
 	return out;
 }

@@ -46,8 +46,8 @@ bool areDequesEqual(const std::deque<Move>& deque1, const std::deque<Move>& dequ
 TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_1)
 {
     board_t board;
-    std::deque<std::string> fen = {"position","fen","r3kb1r/1pp2p1p/2nq1n2/1B1pp1pP/p2PPBb1/2N2N2/PPP2PP1/R2QK2R","w","KQkq","g6","0","4"};
-    board.init_fen(fen);
+    std::string fen = "r3kb1r/1pp2p1p/2nq1n2/1B1pp1pP/p2PPBb1/2N2N2/PPP2PP1/R2QK2R w KQkq g6 0 4";
+    board.set_position(fen);
 
     // Moves at this position
     std::deque<Move> actual_moves = {
@@ -107,10 +107,9 @@ TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_1)
         Move({4,1},{3,0}, B_PAWN),
         Move({4,1},{5,2}, B_KNIGHT),
         // pawn on 5th rank
-        Move({4,7},{5,6},B_PAWN, true),
-        Move({4,7},{5,7})
+        Move({4,7},{5,7}),
+        Move({4,7},{5,6},B_PAWN, true)
     };
-
 
     std::deque<Move> generated_moves = board.get_psuedo_legal_moves();
 
@@ -121,8 +120,8 @@ TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_1)
 TEST_F(MovesGeneratorTest, PsuedoLegalMovesTest_2)
 {
     board_t board;
-    std::deque<std::string> fen = { "position","fen","r1bqkb1r/ppp2ppp/2n5/1B1pp3/8/2N2N2/PPPP1PPP/R1BQK2R","b","KQkq","-","0","4" };
-    board.init_fen(fen);
+    std::string fen = "r1bqkb1r/ppp2ppp/2n5/1B1pp3/8/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 4";
+    board.set_position(fen);
 
     // Moves at this position
     std::deque<Move> actual_moves = {
