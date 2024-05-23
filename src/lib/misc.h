@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream&, SyncCout);
 namespace LOG {
     extern bool LOGGING;
     extern std::ofstream log_file;
-    constexpr char* FILE_NAME = "chess_cpp.log";
+    extern std::string FILE_NAME;
 
     void open_log_file(const std::string& file_name = FILE_NAME);
     void log_error(const std::string& message);

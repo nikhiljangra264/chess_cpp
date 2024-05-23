@@ -45,8 +45,8 @@ private:
     
     // output
     std::string stats(depth_t depth, score_t score, time_type time);
-    inline std::string Search::getPV();
-    inline std::string Search::convert_score(score_t score);
+    inline std::string getPV();
+    inline std::string convert_score(score_t score);
 
     bool is_move_legal(Move& m);
 

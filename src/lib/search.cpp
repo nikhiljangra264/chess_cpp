@@ -1,6 +1,7 @@
 #include "search.h"
 #include "evaluate.h"
 #include <algorithm>
+#include <cstring>
 
 score_t Search::absearch(score_t alpha, score_t beta, depth_t depth, depth_t ply)
 {
@@ -245,7 +246,7 @@ void Search::reset()
 		TT::pv_length[i] = 0;
 		TT::pv_table[i].fill(NULL_MOVE);
 	}
-	std::memset(TT::h_table, 0, sizeof(TT::h_table));
+	memset(TT::h_table, 0, sizeof(TT::h_table));
 }
 
 void Search::iterative_deepening() {

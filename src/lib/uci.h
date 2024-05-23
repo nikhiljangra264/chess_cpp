@@ -2,6 +2,7 @@
 #define UCI_H
 
 // External
+#include <thread>
 #include <sstream>
 
 // Internal

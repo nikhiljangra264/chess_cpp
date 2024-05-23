@@ -12,7 +12,7 @@ using u8 = uint8_t;
 using s8 = char;
 
 using time_type = uint64_t;
-using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+using time_point = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using score_t = int;
 using hash_t = u64;
 using depth_t = u16;

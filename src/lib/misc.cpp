@@ -20,6 +20,7 @@ namespace LOG {
 
     bool LOGGING = false;
     std::ofstream log_file;
+    std::string FILE_NAME = "chess_cpp.log";
 
     void open_log_file(const std::string& file_name) {
         log_file.open(file_name, std::ios::out | std::ios::app);
