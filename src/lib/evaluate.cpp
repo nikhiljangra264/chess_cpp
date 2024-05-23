@@ -1,6 +1,6 @@
 #include "evaluate.h"
 
-int eval::__evaluate(const board_t& _b, COLOR side)
+int Eval::evaluate_side(const board_t& _b, COLOR side)
 {
 	int calc = 0;
 	// material and psqt

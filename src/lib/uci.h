@@ -1,19 +1,12 @@
-#ifndef __UCI_H__
-#define __UCI_H__
+#ifndef UCI_H
+#define UCI_H
 
 // External
-#include <thread>
-#include <vector>
 #include <sstream>
-#include <memory>
 
 // Internal
-#include "header.h"
-#include "evaluate.h"
 #include "board.h"
 #include "search.h"
-#include "misc.h"
-#include "limits.h"
 
 /// <summary>
 /// Implementation of UCI protocols.
@@ -27,18 +20,14 @@
 ///   - eval: Return the evaluation score of the current board (for debugging).
 /// </summary>
 class UCI {
-private:
-	board_t board;
-	Search engine;
-	std::unique_ptr<std::thread> thread;
-
 public:
-	UCI() : thread(nullptr), engine(board) {}
+	UCI() : thread(nullptr) {}
 
 	void loop(int argc, const char* argv[]);        // main loop
 	void position(std::istringstream& is);          // set up position on board
 	void go(std::istringstream& is);                // start the engine
-	limits_t parse_limits(std::istringstream& is);  // parse the limits in the command
+	limits_t parse_limits(std::istringstream& is);	// parse the limits
+	void setoptions(std::istringstream& is);		// parse the options
 
 	void stop();
 	void eval();
@@ -48,7 +37,13 @@ public:
 			thread->join();
 		}
 	}
+
+private:
+	board_t board;
+	Search engine;
+	std::unique_ptr<std::thread> thread;
+	std::mutex engine_mutex;
 };
 
 
-#endif // __UCI_H__
+#endif // UCI_H

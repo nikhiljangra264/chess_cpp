@@ -1,13 +1,12 @@
 #include "board.h"
 #include "hashing.h"
 #include "move.h"
+#include "tt.h"
 #include "misc.h"
 #include <sstream>
 
 void board_t::push(const Move& m)
 {
-	Piece moving_piece = piece_at(m.from);
-
 	// check for null move
 	if (m == NULL_MOVE)
 	{
@@ -15,12 +14,14 @@ void board_t::push(const Move& m)
 		return;
 	}
 
+	Piece moving_piece = piece_at(m.from);
+
 	// push to the history
 	history.push(m, board_state, key);
 	
 	// en passant key
 	if (board_state.ep_square != INVALID_SQ)
-		key ^= en_passant_keys[(board_state.ep_square.rank == 2)?0:1][board_state.ep_square.file];
+		key ^= Zobrist::en_passant_keys[(board_state.ep_square.rank == 2) ? 0 : 1][board_state.ep_square.file];
 	// reset en passant
 	board_state.ep_square = INVALID_SQ;
 
@@ -36,7 +37,7 @@ void board_t::push(const Move& m)
 		else black_king = m.to;
 
 		// update hash with previous castling rights
-		key ^= castling_rights_keys[board_state.rights];
+		key ^= Zobrist::castling_rights_keys[board_state.rights];
 
 		// revoke rights
 		board_state.revoke_castling_rights(turn);
@@ -45,8 +46,8 @@ void board_t::push(const Move& m)
 		if (m.from.file == 4 && m.to.file == 2)		// queen side castling
 		{
 			// update hash for rook move
-			key ^= piece_keys[board[m.to.rank][0]-1][m.to.rank][0];
-			key ^= piece_keys[board[m.to.rank][0]-1][m.to.rank][3];
+			key ^= Zobrist::piece_keys[board[m.to.rank][0]][m.to.rank][0];
+			key ^= Zobrist::piece_keys[board[m.to.rank][0]][m.to.rank][3];
 
 			board[m.to.rank][3] = board[m.to.rank][0];
 			board[m.to.rank][0] = EMPTY;
@@ -54,8 +55,8 @@ void board_t::push(const Move& m)
 		}
 		if (m.from.file == 4 && m.to.file == 6)		// king side castling
 		{
-			key ^= piece_keys[board[m.to.rank][7]-1][m.to.rank][7];
-			key ^= piece_keys[board[m.to.rank][7]-1][m.to.rank][5];
+			key ^= Zobrist::piece_keys[board[m.to.rank][7]][m.to.rank][7];
+			key ^= Zobrist::piece_keys[board[m.to.rank][7]][m.to.rank][5];
 
 			board[m.to.rank][5] = board[m.to.rank][7];
 			board[m.to.rank][7] = EMPTY;
@@ -64,10 +65,10 @@ void board_t::push(const Move& m)
 		board[m.to.rank][m.to.file] = moving_piece;
 
 		// update hash
-		key ^= castling_rights_keys[board_state.rights];
-		if(m.capture)
-			key ^= piece_keys[m.capture-1][m.to.rank][m.to.file];
-		key ^= piece_keys[moving_piece-1][m.to.rank][m.to.file];
+		key ^= Zobrist::castling_rights_keys[board_state.rights];
+		if(m.capture != EMPTY)
+			key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+		key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 	}
 
 	// pawn moves
@@ -76,13 +77,13 @@ void board_t::push(const Move& m)
 		board_state.halfmove_count = 0;
 
 		// en passant
-		if (m.to == board_state.ep_square)
+		if (m.from.file != m.to.file && !is_sq_occ(m.to))
 		{
 			board[m.from.rank][m.to.file] = EMPTY;
 			board[m.to.rank][m.to.file] = moving_piece;
 
-			key ^= piece_keys[moving_piece-1][m.to.rank][m.to.file];
-			key ^= piece_keys[m.capture-1][m.from.rank][m.to.file];
+			key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
+			key ^= Zobrist::piece_keys[m.capture][m.from.rank][m.to.file];
 		}
 		// double pawn push
 		else if (m.to.rank == m.from.rank + 2 * turn)
@@ -90,24 +91,24 @@ void board_t::push(const Move& m)
 			board_state.ep_square = { m.from.rank + turn, m.from.file };
 			board[m.to.rank][m.to.file] = moving_piece;
 
-			key ^= piece_keys[moving_piece-1][board_state.ep_square.rank][board_state.ep_square.file];
+			key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 		}
 		// promotion
 		else if (m.to.rank == TOTAL_RANK - 1 || m.to.rank == 0)
 		{
 			board[m.to.rank][m.to.file] = static_cast<Piece>(m.promotion_or_enpassant);
 
-			if(m.capture)
-				key ^= piece_keys[m.capture-1][m.to.rank][m.to.file];
-			key ^= piece_keys[board[m.to.rank][m.to.file] - 1][m.to.rank][m.to.file];
+			if(m.capture != EMPTY)
+				key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+			key ^= Zobrist::piece_keys[board[m.to.rank][m.to.file]][m.to.rank][m.to.file];
 		}
 		else
 		{
 			board[m.to.rank][m.to.file] = moving_piece;
 
-			if(m.capture)
-				key ^= piece_keys[m.capture-1][m.to.rank][m.to.file];
-			key ^= piece_keys[moving_piece-1][m.to.rank][m.to.file];
+			if(m.capture != EMPTY)
+				key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+			key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 		}
 	}
 	// rook moves revokes the castling rights
@@ -116,7 +117,7 @@ void board_t::push(const Move& m)
 		// update castling rights
 		if (board_state.rights)
 		{
-			key ^= castling_rights_keys[board_state.rights];
+			key ^= Zobrist::castling_rights_keys[board_state.rights];
 			if (turn == WHITE)
 			{
 				if (m.from.file == 0)				board_state.set_wking_castle_queen(false);
@@ -127,35 +128,35 @@ void board_t::push(const Move& m)
 				if (m.from.file == 0)				board_state.set_bking_castle_queen(false);
 				else if (m.from.file == TOTAL_FILE)	board_state.set_bking_castle_king(false);
 			}
-			key ^= castling_rights_keys[board_state.rights];
+			key ^= Zobrist::castling_rights_keys[board_state.rights];
 		}
 		board[m.to.rank][m.to.file] = moving_piece;
 
-		if(m.capture)
-			key ^= piece_keys[m.capture-1][m.to.rank][m.to.file];
-		key ^= piece_keys[moving_piece-1][m.to.rank][m.to.file];
+		if(m.capture != EMPTY)
+			key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+		key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 	}
 	else
 	{
 		board[m.to.rank][m.to.file] = moving_piece;
 
-		if(m.capture)
-			key ^= piece_keys[m.capture-1][m.to.rank][m.to.file];
-		key ^= piece_keys[moving_piece-1][m.to.rank][m.to.file];
+		if(m.capture != EMPTY)
+			key ^= Zobrist::piece_keys[m.capture][m.to.rank][m.to.file];
+		key ^= Zobrist::piece_keys[moving_piece][m.to.rank][m.to.file];
 	}
 
 	// change turn and update halfmove count
 	turn = static_cast<COLOR>(-turn);
 	board_state.halfmove_count++;
-	key ^= side_to_move_key;
+	key ^= Zobrist:: side_to_move_key;
 
 	board[m.from.rank][m.from.file] = EMPTY;
 	// update hash for from square
-	key ^= piece_keys[moving_piece-1][m.from.rank][m.from.file];
+	key ^= Zobrist::piece_keys[moving_piece][m.from.rank][m.from.file];
 
 	// update hash for en passant
 	if (board_state.ep_square != INVALID_SQ)
-		key ^= en_passant_keys[(board_state.ep_square.rank == 2) ? 0 : 1][board_state.ep_square.file];
+		key ^= Zobrist::en_passant_keys[(board_state.ep_square.rank == 2) ? 0 : 1][board_state.ep_square.file];
 }
 
 void board_t::pop()
@@ -228,9 +229,9 @@ void board_t::pop()
 	history.pop();
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
+MOVES board_t::get_psuedo_legal_move_pawn(square_t sq)
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	square_t to{sq.rank, sq.file};
 
@@ -292,9 +293,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_pawn(square_t sq)
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_knight(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	for (auto &dir : KNIGHT_DIRECTIONS)
 	{
@@ -308,9 +309,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_knight(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_bishop(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : BISHOP_DIRECTIONS)
@@ -337,9 +338,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_bishop(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_rook(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	// for every direction
 	for (auto &dir : ROOK_DIRECTIONS)
@@ -366,17 +367,17 @@ std::deque<Move> board_t::get_psuedo_legal_move_rook(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_queen(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_queen(square_t sq) const
 {
-	std::deque<Move> bishop_moves = std::move(get_psuedo_legal_move_bishop(sq));
-	std::deque<Move> rook_moves = std::move(get_psuedo_legal_move_rook(sq));
+	MOVES bishop_moves = std::move(get_psuedo_legal_move_bishop(sq));
+	MOVES rook_moves = std::move(get_psuedo_legal_move_rook(sq));
 	rook_moves.insert(rook_moves.end(), std::make_move_iterator(bishop_moves.begin()), std::make_move_iterator(bishop_moves.end()));
 	return rook_moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
+MOVES board_t::get_psuedo_legal_move_king(square_t sq) const
 {
-	std::deque<Move> moves;
+	MOVES moves;
 	COLOR color = piece_color(piece_at(sq));
 	// simple moves
 	for (auto &dir : ALL_DIRECTIONS)
@@ -406,9 +407,9 @@ std::deque<Move> board_t::get_psuedo_legal_move_king(square_t sq) const
 	return moves;
 }
 
-std::deque<Move> board_t::get_psuedo_legal_moves()
+MOVES board_t::get_psuedo_legal_moves()
 {
-	std::deque<Move> moves;
+	MOVES moves;
 
 	for (u8 rank = 0; rank < TOTAL_RANK; ++rank)
 	{
@@ -419,32 +420,32 @@ std::deque<Move> board_t::get_psuedo_legal_moves()
 				continue;
 			else if (is_pawn(piece_at(rank, file)))
 			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_pawn({ rank, file }));
+				MOVES temp = std::move(get_psuedo_legal_move_pawn({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_knight(piece_at(rank, file)))
 			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_knight({ rank, file }));
+				MOVES temp = std::move(get_psuedo_legal_move_knight({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_bishop(piece_at(rank, file)))
 			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_bishop({ rank, file }));
+				MOVES temp = std::move(get_psuedo_legal_move_bishop({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_rook(piece_at(rank, file)))
 			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_rook({ rank, file }));
+				MOVES temp = std::move(get_psuedo_legal_move_rook({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else if (is_queen(piece_at(rank, file)))
 			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_queen({ rank, file }));
+				MOVES temp = std::move(get_psuedo_legal_move_queen({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 			else
 			{
-				std::deque<Move> temp = std::move(get_psuedo_legal_move_king({ rank, file }));
+				MOVES temp = std::move(get_psuedo_legal_move_king({ rank, file }));
 				moves.insert(moves.end(), std::make_move_iterator(temp.begin()), std::make_move_iterator(temp.end()));
 			}
 		}
@@ -610,22 +611,26 @@ void board_t::set_position(const std::string& fen, const std::vector<std::string
 
 	// Turn
 	if (!(ss >> token))
-		throw std::invalid_argument("Invalid FEN: missing turn part");
-	if (token == "w")
+	{
+		LOG::log_error("Invalid FEN: missing turn part");
 		turn = WHITE;
-	else if (token == "b")
-		turn = BLACK;
+	}
+	else if (token == "w")
+		turn = WHITE;
 	else
-		throw std::invalid_argument("Invalid FEN: invalid turn part");
+		turn = BLACK;
 
 	// Castling rights
 	if (!(ss >> token))
-		throw std::invalid_argument("Invalid FEN: missing castling rights part");
+		LOG::log_error("Invalid FEN: missing castling rights part");
 	board_state.set_castling_rights(token);
 
 	// En passant
 	if (!(ss >> token))
-		throw std::invalid_argument("Invalid FEN: missing en passant part");
+	{
+		LOG::log_error("Invalid FEN: missing en passant part");
+		board_state.ep_square = INVALID_SQ;
+	}
 	if (token != "-")
 	{
 		if (token.size() != 2 || token[0] < 'a' || token[0] > 'h' || token[1] < '1' || token[1] > '8')
@@ -640,15 +645,11 @@ void board_t::set_position(const std::string& fen, const std::vector<std::string
 
 	// Half move count
 	if (!(ss >> token))
-		throw std::invalid_argument("Invalid FEN: missing half move count");
-	try
 	{
-		board_state.halfmove_count = std::stoi(token);
+		LOG::log_error("Invalid FEN: missing half move count");
+		board_state.halfmove_count = 0;
 	}
-	catch (const std::exception&)
-	{
-		throw std::invalid_argument("Invalid FEN: invalid half move count");
-	}
+	board_state.halfmove_count = std::stoi(token);
 
 	// init key
 	init_key();
@@ -679,11 +680,12 @@ void board_t::init_fen(const std::string& fen)
 		}
 		else if (isdigit(c))
 		{
-			// Empty squares indicated by a number
-			int emptyCount = c - '0'; // Number of empty squares
-			file += emptyCount; // Move file pointer forward
+			file += c - '0';
 			if (file > TOTAL_FILE)
-				throw std::invalid_argument("Invalid FEN: Too many empty squares in a rank");
+			{
+				LOG::log_error("Invalid FEN: Too many empty squares in a rank");
+				file = 0;
+			}
 		}
 		else
 		{
@@ -742,7 +744,7 @@ Move board_t::uci_to_move(const std::string& move) const
 			promotion = (turn == WHITE) ? W_ROOK : B_ROOK;
 			break;
 		default:
-			// invalid promotion character
+			LOG::log_error("invalid promotion character");
 			return NULL_MOVE;
 		}
 	}
@@ -774,24 +776,24 @@ void board_t::init_key()
 		{
 			if (piece_at(rank, file) != EMPTY)
 			{
-				key ^= piece_keys[piece_at(rank, file) - 1][rank][file];
+				key ^= Zobrist::piece_keys[piece_at(rank, file)][rank][file];
 			}
 		}
 	}
 	// side to move
 	if (turn == WHITE)
-		key ^= side_to_move_key;
+		key ^= Zobrist::side_to_move_key;
 
 	// castling rights
-	key ^= castling_rights_keys[board_state.rights];
+	key ^= Zobrist::castling_rights_keys[board_state.rights];
 
 	// en passant move
 	if (board_state.ep_square != INVALID_SQ)
 	{
 		if (board_state.ep_square.rank == 2)
-			key ^= en_passant_keys[0][board_state.ep_square.file];
+			key ^= Zobrist::en_passant_keys[0][board_state.ep_square.file];
 		else
-			key ^= en_passant_keys[1][board_state.ep_square.file];
+			key ^= Zobrist::en_passant_keys[1][board_state.ep_square.file];
 	}
 }
 

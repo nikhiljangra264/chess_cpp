@@ -1,4 +1,5 @@
 #include "misc.h"
+#include <iomanip>
 
 // Used to serialize access to std::cout
 // to avoid multiple threads writing at the same time.
@@ -15,25 +16,37 @@ std::ostream& operator<<(std::ostream& os, SyncCout sc) {
     return os;
 }
 
-void board_history_t::push(const Move move, const board_state_t board_state, hash_t key)
-{
-    move_history.push_back(move);
-    board_state_history.push_back(board_state);
-    key_history.push_back(key);
-    key_cache[key]++;
-}
+namespace LOG {
 
-void board_history_t::pop()
-{
-    if (!key_history.empty())
-    {
-        hash_t key = key_history.back();
-        move_history.pop_back();
-        board_state_history.pop_back();
-        if (key_cache[key] <= 1)
-            key_cache.erase(key);
-        else
-            key_cache[key]--;
-        key_history.pop_back();
+    bool LOGGING = false;
+    std::ofstream log_file;
+
+    void open_log_file(const std::string& file_name) {
+        log_file.open(file_name, std::ios::out | std::ios::app);
+        // Check if the log file was opened successfully
+        if (!log_file.is_open()) {
+            throw std::runtime_error("Failed to open log file: " + file_name);
+        }
+    }
+
+    void log_error(const std::string& message) {
+        if (!LOGGING) return;
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        log_file << "ERROR: [" << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S") << "] " << message << std::endl;
+    }
+
+    void log_info(const std::string& message) {
+        if (!LOGGING) return;
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        log_file << "INFO: [" << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S") << "] " << message << std::endl;
+    }
+
+    void shutdown() {
+        if (log_file.is_open()) {
+            log_file.close();
+        }
     }
 }
+

@@ -1,8 +1,7 @@
-#ifndef __HEADER_H__
-#define __HEADER_H__
+#ifndef HEADER_H
+#define HEADER_H
 
 #include <stdint.h>
-#include <limits>
 #include <array>
 #include <chrono>
 
@@ -16,6 +15,7 @@ using time_type = uint64_t;
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 using score_t = int;
 using hash_t = u64;
+using depth_t = u16;
 
 constexpr u8 TOTAL_FILE = 8;
 constexpr u8 TOTAL_RANK = 8;
@@ -27,25 +27,25 @@ enum COLOR :s8 {
 
 /// <summary>
 /// piece representation
-/// white king = 6
+/// white king = 5
 /// </summary>
 enum Piece :u8 {
-    EMPTY = 0,
     W_PAWN,
     W_KNIGHT,
     W_BISHOP,
     W_ROOK,
     W_QUEEN,
-    W_KING = 6,
+    W_KING = 5,
     B_PAWN,
     B_KNIGHT,
     B_BISHOP,
     B_ROOK,
     B_QUEEN,
-    B_KING
+    B_KING,
+    EMPTY
 };
 
-constexpr char PieceSymbol[] = { ' ','P','N','B','R','Q','K','p','n','b','r','q','k' };
+constexpr char PieceSymbol[] = { 'P','N','B','R','Q','K','p','n','b','r','q','k',' ' };
 
 inline bool is_pawn(Piece _p)   { return _p == B_PAWN || _p == W_PAWN; }
 inline bool is_knight(Piece _p) { return _p == B_KNIGHT || _p == W_KNIGHT ; }
@@ -58,8 +58,8 @@ inline COLOR piece_color(Piece _p) { return (_p <= W_KING) ? WHITE : BLACK; }
 
 struct square_t
 {
-    u8 file;
-    u8 rank;
+    u8 file:4;
+    u8 rank:4;
 
     square_t() = delete;
     constexpr square_t(int _rank, int _file) : file(_file), rank(_rank) {}
@@ -88,15 +88,30 @@ constexpr std::array<std::array<s8, 2>, 8> ALL_DIRECTIONS{ {
 
 static constexpr square_t INVALID_SQ{ 15, 15 };
 
-constexpr int MAX_DEPTH = 10;
+constexpr int CHECK_RATE = 256;
+constexpr depth_t   MAX_DEPTH = 10;
+constexpr u64       MAX_NODES = -1;
+constexpr depth_t   MAX_PLY = 60;
 constexpr time_type MAX_TIME = -1;
-constexpr u64 MAX_NODES = -1;
-constexpr time_type OVERHEAD_TIME = 30;
 
-constexpr score_t CHECKMATE_VALUE = 32000;
-constexpr score_t STALEMATE_VALUE = -500;
-constexpr score_t INFINITE = std::numeric_limits<score_t>::max();
+constexpr score_t VALUE_NONE = 32002;
+constexpr score_t VALUE_MATE = 32000;
+constexpr score_t VALUE_INFINITE = 32001;
+constexpr score_t VALUE_MATE_IN_PLY = VALUE_MATE - MAX_PLY;
+constexpr score_t VALUE_MATED_IN_PLY = -VALUE_MATE_IN_PLY;
+
+constexpr score_t VALUE_TB_WIN = VALUE_MATE_IN_PLY;
+constexpr score_t VALUE_TB_LOSS = -VALUE_TB_WIN;
+constexpr score_t VALUE_TB_WIN_IN_MAX_PLY = VALUE_TB_WIN - MAX_PLY;
+constexpr score_t VALUE_TB_LOSS_IN_MAX_PLY = -VALUE_TB_WIN_IN_MAX_PLY;
+
+constexpr int MAX_HISTORY_SIZE = 1 << 17;
+
 constexpr auto StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+// Macros for mate calculations
+#define mate_in(ply) (VALUE_MATE - (ply))
+#define mated_in(ply) ((ply) - VALUE_MATE)
 
-#endif // __HEADER_H__
+
+#endif // HEADER_H

@@ -1,12 +1,23 @@
-#pragma once
+#ifndef PSQT_H
+#define PSQT_H
 
 #include "header.h"
-	
-static u16 PieceValue[13] = { 0,100,320,330,500,900,20000,100,320,330,500,900,20000 };
 
-static s8 psqt[13][8][8] = {
-	// empty
-	{},
+namespace Eval
+{
+static u16 PieceValue[] = { 100,320,330,500,900,20000,100,320,330,500,900,20000 };
+
+// most valuable victim - least valuable aggressor
+static u16 mvvlva[][6] = {
+	{105, 104, 103, 102, 101, 100},
+	{205, 204, 203, 202, 201, 200},
+	{305, 304, 303, 302, 301, 300},
+	{405, 404, 403, 402, 401, 400},
+	{505, 504, 503, 502, 501, 500},
+	{605, 604, 603, 602, 601, 600}
+};
+
+static s8 psqt[][8][8] = {
 	// pawn white
 	{
 		{0,  0,  0,  0,  0,  0,  0,  0} ,
@@ -139,3 +150,7 @@ static s8 psqt[13][8][8] = {
 		{ 20, 30, 10,  0,  0, 10, 30, 20}
 	}
 };
+
+} // namespace Eval
+
+#endif // PSQT_H

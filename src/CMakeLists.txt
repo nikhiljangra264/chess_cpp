@@ -4,10 +4,12 @@ cmake_minimum_required(VERSION 3.16)
 add_executable(chess_cpp 
     chess_cpp.cpp
     lib/board.cpp
-    "lib/search.cpp"
     lib/evaluate.cpp
+    lib/misc.cpp
+    
+    lib/search.cpp
     lib/uci.cpp
-    lib/misc.cpp)
+ "lib/tt.cpp" "lib/hashing.cpp")
 
 # Optionally, you can include header files via target_include_directories()
 # target_include_directories(chess_cpp PRIVATE src)

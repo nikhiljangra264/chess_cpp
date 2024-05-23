@@ -1,32 +1,39 @@
 #include "uci.h"
+#include "misc.h"
+#include "tt.h"
+#include "evaluate.h"
 
 void UCI::stop() {
     // stop engine
     engine.stop();
 
-    // join the thread
+    // Join the thread
     if (thread && thread->joinable()) {
         thread->join();
+        thread.reset();
     }
 }
 
 void UCI::eval() {
-    std::string e = std::to_string(eval::evaluate(board));
+    std::string e = std::to_string(Eval::evaluate(board));
     sync_cout << e << sync_endl;
 }
 
 void UCI::loop(int argc, const char* argv[])
 {
     std::string token, cmd;
-
+    
     for (int i = 1; i < argc; ++i)
         cmd += std::string(argv[i]) + " ";
 
     do
     {
+        if (LOG::LOGGING)
+            LOG::log_info("command received: " + cmd);
+
         std::istringstream is(cmd);
 
-        token.clear();  // Avoid a stale if getline() returns nothing or a blank line
+        token.clear();
         is >> std::skipws >> token;
 
         if (token == "quit")
@@ -38,8 +45,9 @@ void UCI::loop(int argc, const char* argv[])
             stop();
 
         else if (token == "uci")
-            sync_cout << "id name chess_cpp" << "\n"
+            sync_cout << "id name chesscpp_3" << "\n"
             << "id author Nikhil" << "\n"
+            << "option name Hash type spin default 128 min 1 max 65536\n"
             << "uciok" << sync_endl;
 
         else if (token == "go")
@@ -47,6 +55,9 @@ void UCI::loop(int argc, const char* argv[])
 
         else if (token == "position")
             position(is);
+
+        else if (token == "setoption")
+            setoptions(is);
 
         else if (token == "ucinewgame")
             engine.reset();
@@ -92,15 +103,13 @@ void UCI::position(std::istringstream& is)
     if (token == "startpos")
     {
         fen = StartFEN;
-        is >> token;  // Consume the "moves" token, if any
+        is >> token;
     }
-    else if (token == "fen")
+    else
     {
         while (is >> token && token != "moves")
             fen += token + " ";
     }
-    else
-        return;
 
     std::vector<std::string> moves;
 
@@ -114,14 +123,37 @@ void UCI::position(std::istringstream& is)
 
 void UCI::go(std::istringstream& is)
 {
-    engine.limits = parse_limits(is);
+    if (thread)
+        stop();
+    limits_t limits = parse_limits(is);
+    std::lock_guard<std::mutex> lock(engine_mutex);
+    thread = std::make_unique<std::thread>([this, limits]() { engine.go(board, limits); });
+}
 
-    if (thread && thread->joinable()) {
-        thread->join();
+void UCI::setoptions(std::istringstream& is)
+{
+    // if engine running donot update the options
+    std::lock_guard<std::mutex> lock(engine_mutex);
+
+    options_t options;
+    std::string token, name;
+
+    while (is >> token)
+    {
+        if (token == "name")
+        {
+            is >> name;
+            if (name == "Hash")
+            {
+                is >> token; // value
+                if (!(is >> token)) {
+                    options.tt_size = TT::DEFAULT_TT_SIZE;
+                    LOG::log_error("Invalid value for tt size");
+                }
+            }
+        }
     }
-
-    // Create a new thread and execute it
-    thread = std::make_unique<std::thread>([this]() { engine.search(); });
+    engine.set_options(options.tt_size);
 }
 
 limits_t UCI::parse_limits(std::istringstream& is)
@@ -129,51 +161,36 @@ limits_t UCI::parse_limits(std::istringstream& is)
     limits_t limits;
     std::string token;
 
-    limits.start_time = std::chrono::steady_clock::now();  // The search starts as early as possible
+    // start time as early as possible
+    limits.start_time = std::chrono::high_resolution_clock::now();
 
     while (is >> token)
     {
-        if (token == "wtime")
-        {
-            if (!(is >> limits.wtime))
-            {
-                throw std::invalid_argument("Error: Invalid value for wtime\n");
-            }
-        }
-        else if (token == "btime")
-        {
-            if (!(is >> limits.btime))
-            {
-                throw std::invalid_argument("Error: Invalid value for btime\n");
-            }
-        }
-        else if (token == "movetime")
-        {
-            if (!(is >> limits.movetime))
-            {
-                throw std::invalid_argument("Error: Invalid value for movetime\n");
-            }
-        }
-        else if (token == "depth")
+        if (token == "depth")
         {
             if (!(is >> limits.depth))
             {
-                throw std::invalid_argument("Error: Invalid value for depth\n");
+                limits.depth = MAX_DEPTH;
+                LOG::log_error("Invalid depth value");
             }
         }
         else if (token == "nodes")
         {
             if (!(is >> limits.nodes))
             {
-                throw std::invalid_argument("Error: Invalid value for nodes\n");
+                limits.nodes = MAX_NODES;
+                LOG::log_error("Invalid value for nodes");
             }
         }
-        else
+        else if (token == "movetime")
         {
-            throw std::invalid_argument("Warning: Unknown token\n");
+            if (!(is >> limits.movetime))
+            {
+                limits.nodes = MAX_TIME;
+                LOG::log_error("Invalid value for movetime");
+            }
         }
     }
-    limits.movetime -= OVERHEAD_TIME;
-
+    // limits.movetime -= OVERHEAD_TIME;
     return limits;
 }

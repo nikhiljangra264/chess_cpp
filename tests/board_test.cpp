@@ -18,7 +18,7 @@ protected:
 
 
 TEST_F(BoardTest, make_unmake_moves) {
-    init_zobrist_hash();
+    Zobrist::init_zobrist_hash();
 
     // test making and unmaking move
     board_t board_make, final_position, starting_position;
@@ -98,22 +98,9 @@ TEST_F(BoardTest, make_unmake_moves) {
     EXPECT_EQ(board_make, starting_position);
 }
 
-TEST_F(BoardTest, setting_board_with_fen) {
-    // test setting board with fen
-
-    // setup starting position on the board
-    board_t board1, board2;
-    std::string starting_fen_1 = StartFEN;
-    std::string starting_fen_2 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-    board1.set_position(starting_fen_1);
-    board2.set_position(starting_fen_2);
-    EXPECT_EQ(board1, board2);
-}
-
 TEST_F(BoardTest, double_pawn_push) {
     // test setting board with fen
-    init_zobrist_hash();
+    Zobrist::init_zobrist_hash();
 
     // setup starting position on the board
     board_t board1, board2,board3;

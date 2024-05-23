@@ -1,5 +1,5 @@
-#ifndef __BOARD_H__
-#define __BOARD_H__
+#ifndef BOARD_H
+#define BOARD_H
 
 #include <array>
 #include <deque>
@@ -10,23 +10,20 @@
 #include "header.h"
 #include "move.h"
 #include "hashing.h"
-#include "misc.h"
 
 class board_t
 {
 protected:
 	std::array<std::array<Piece, TOTAL_FILE>, TOTAL_RANK> board;
 
+public:
 	// Store move history which contains move and board_state
 	board_history_t history;
-
-public:
 	board_state_t board_state;
 
 	// constructors
 	board_t() { 
 		reset();
-		init_key();
 	}
 
 	board_t(const board_t& other)
@@ -49,7 +46,7 @@ public:
 		board_state(other.board_state),
 		history(std::move(other.history)) {}
 
-	// Move assignment operator
+	// assignment operator
 	board_t& operator=(board_t&& other) noexcept {
 		if (this != &other) {
 			board = std::move(other.board);
@@ -59,6 +56,18 @@ public:
 			black_king = other.black_king;
 			board_state = other.board_state;
 			history = std::move(other.history);
+		}
+		return *this;
+	}
+	board_t& operator=(const board_t& other) noexcept {
+		if (this != &other) {
+			board = other.board;
+			key = other.key;
+			turn = other.turn;
+			white_king = other.white_king;
+			black_king = other.black_king;
+			board_state = other.board_state;
+			history = other.history;
 		}
 		return *this;
 	}
@@ -80,21 +89,35 @@ public:
 	void pop();
 
 	// generate moves
-	std::deque<Move> get_psuedo_legal_moves();
-	std::deque<Move> get_psuedo_legal_move_pawn(square_t sq);
-	std::deque<Move> get_psuedo_legal_move_knight(square_t sq) const;
-	std::deque<Move> get_psuedo_legal_move_bishop(square_t sq) const;
-	std::deque<Move> get_psuedo_legal_move_rook(square_t sq) const;
-	std::deque<Move> get_psuedo_legal_move_queen(square_t sq) const;
-	std::deque<Move> get_psuedo_legal_move_king(square_t sq) const;
+	MOVES get_psuedo_legal_moves();
+	MOVES get_psuedo_legal_move_pawn(square_t sq);
+	MOVES get_psuedo_legal_move_knight(square_t sq) const;
+	MOVES get_psuedo_legal_move_bishop(square_t sq) const;
+	MOVES get_psuedo_legal_move_rook(square_t sq) const;
+	MOVES get_psuedo_legal_move_queen(square_t sq) const;
+	MOVES get_psuedo_legal_move_king(square_t sq) const;
 	std::deque<square_t> sq_attacked_by(square_t sq, COLOR color) const;
 	bool is_sq_attacked_by(square_t sq, COLOR color) const;
+	bool is_check() const {
+		return is_sq_attacked_by(
+			(turn == WHITE) ? white_king : black_king,
+			static_cast<COLOR>(-turn)
+		);
+	}
+	bool is_oppo_check() const {
+		return is_sq_attacked_by(
+			(turn == WHITE) ? black_king : white_king,
+			turn
+		);
+	}
 
 	// initialize board
 	void reset() {
 		for (auto& rank : board) {
 			rank.fill(EMPTY);
 		}
+		history.reset();
+		board_state.reset();
 		key = 0;
 	}
 
@@ -125,4 +148,4 @@ protected:
 	COLOR turn{ WHITE };
 };
 
-#endif // __BOARD_H__
+#endif // BOARD_H

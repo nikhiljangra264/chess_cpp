@@ -3,8 +3,8 @@
 set(CMAKE_CXX_STANDARD 17)
 
 project(chess_cpp
-        VERSION 2.0.0
-        DESCRIPTION "A Tiny UCI Chess Engine"
+        VERSION 3.0.0
+        DESCRIPTION "A UCI Chess Engine"
         LANGUAGES CXX)
 
 include(FetchContent)
