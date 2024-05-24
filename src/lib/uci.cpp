@@ -22,14 +22,13 @@ void UCI::eval() {
 void UCI::loop(int argc, const char* argv[])
 {
     std::string token, cmd;
-    
+
     for (int i = 1; i < argc; ++i)
         cmd += std::string(argv[i]) + " ";
 
     do
     {
-        if (LOG::LOGGING)
-            LOG::log_info("command received: " + cmd);
+        LOG::log_info("command received: " + cmd);
 
         std::istringstream is(cmd);
 
@@ -48,6 +47,7 @@ void UCI::loop(int argc, const char* argv[])
             sync_cout << "id name chesscpp_3" << "\n"
             << "id author Nikhil" << "\n"
             << "option name Hash type spin default 128 min 1 max 65536\n"
+            << "option name LogFile type check default false"
             << "uciok" << sync_endl;
 
         else if (token == "go")
@@ -136,14 +136,14 @@ void UCI::setoptions(std::istringstream& is)
     std::lock_guard<std::mutex> lock(engine_mutex);
 
     options_t options;
-    std::string token, name;
+    std::string token;
 
     while (is >> token)
     {
         if (token == "name")
         {
-            is >> name;
-            if (name == "Hash")
+            is >> token;
+            if (token == "Hash")
             {
                 is >> token; // value
                 if (!(is >> token)) {
@@ -151,9 +151,19 @@ void UCI::setoptions(std::istringstream& is)
                     LOG::log_error("Invalid value for tt size");
                 }
             }
+            else if (token == "LogFile")
+            {
+                is >> token;
+                is >> token;
+                if (token == "true")
+                    LOG::open_log_file();
+                else
+                    LOG::shutdown();
+            }
         }
     }
-    engine.set_options(options.tt_size);
+    if(options.tt_size != TT::tt.size())
+        engine.set_options(options.tt_size);
 }
 
 limits_t UCI::parse_limits(std::istringstream& is)
