@@ -47,7 +47,7 @@ void UCI::loop(int argc, const char* argv[])
             sync_cout << "id name chesscpp_3" << "\n"
             << "id author Nikhil" << "\n"
             << "option name Hash type spin default 128 min 1 max 65536\n"
-            << "option name LogFile type check default false"
+            << "option name LogFile type check default false\n"
             << "uciok" << sync_endl;
 
         else if (token == "go")
@@ -156,9 +156,15 @@ void UCI::setoptions(std::istringstream& is)
                 is >> token;
                 is >> token;
                 if (token == "true")
+                {
+                    LOG::LOGGING = true;
                     LOG::open_log_file();
+                }
                 else
+                {
+                    LOG::LOGGING = false;
                     LOG::shutdown();
+                }
             }
         }
     }

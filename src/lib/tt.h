@@ -10,7 +10,7 @@
 namespace TT {
 
     // TTEntry size 24 bytes
-    // TTEntry in 1 MB or 1048576 are 43690 (approx.)
+    // TTEntry in 1 MB or 1048576 bytes are 43690 (approx.)
     constexpr int MUL_FACTOR = 43690;
     constexpr size_t DEFAULT_TT_SIZE = 128;
 
@@ -43,7 +43,6 @@ namespace TT {
 
         // Clear the transposition table
         void clear() {
-            tt_size = DEFAULT_TT_SIZE * MUL_FACTOR;
             table = std::vector<TTEntry>(tt_size);
         }
 
@@ -101,7 +100,7 @@ namespace TT {
     // Indexed by[color][from][to]
     extern score_t h_table[2][8][8][8][8];
 
-    // store moves so that we donot have to calculate again and again
+    // store moves generated so that we donot have to calculate again and again
     extern store_moves_t moves_history;
 
 } // namespace TT
