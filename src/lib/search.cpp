@@ -304,10 +304,10 @@ inline std::string Search::getPV()
 inline std::string Search::convert_score(score_t score)
 {
 	if (score >= VALUE_MATE_IN_PLY) {
-		return "mate " + std::to_string((VALUE_MATE - score) / 2 + (VALUE_MATE - score) & 1);
+		return "mate " + std::to_string(((VALUE_MATE - score) / 2) + ((VALUE_MATE - score) & 1));
 	}
 	else if (score <= VALUE_MATED_IN_PLY) {
-		return "mate " + std::to_string(-(VALUE_MATE + score) / 2 + (VALUE_MATE + score) & 1);
+		return "mate " + std::to_string(-((VALUE_MATE + score) / 2) + ((VALUE_MATE + score) & 1));
 	}
 	else {
 		return "cp " + std::to_string(score);
