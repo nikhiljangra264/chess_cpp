@@ -7,7 +7,9 @@ chess_cpp is a free and simple UCI chess engine.
 chess_cpp does not include a graphical user interface (GUI) that is required to display a chessboard and to make it easy to input moves. 
 Read the documentation for your GUI of choice for information about how to use UCI Chess Engine with it.
 
-For example Lucas Chess GUI: https://github.com/lukasmonk/lucaschessR
+For example 
+- Lucas Chess GUI: https://github.com/lukasmonk/lucaschessR
+- CuteChess: https://github.com/cutechess/cutechess
 
 ### Prerequisites
 
