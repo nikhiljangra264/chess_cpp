@@ -1,6 +1,6 @@
-﻿#include "lib/uci.h"
-#include "lib/hashing.h"
-#include "lib/misc.h"
+﻿#include "uci.h"
+#include "hashing.h"
+#include "misc.h"
 
 int main(int argc, char const* argv[]) {
     // uci instance

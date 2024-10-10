@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include "../src/lib/move.h"
+#include "../src/move.h"
 
 // Define a fixture for your tests
-class CastlingRightsTest : public ::testing::Test {
-protected:
+class CastlingRightsTest: public ::testing::Test {
+   protected:
     // Set up common variables or objects needed for your tests
     CastlingRightsTest() {
         // Initialize anything needed before each test
@@ -13,7 +13,6 @@ protected:
     virtual ~CastlingRightsTest() {
         // Free resources, if any
     }
-
 };
 
 TEST_F(CastlingRightsTest, set_function_test) {
@@ -45,7 +44,7 @@ TEST_F(CastlingRightsTest, set_function_test) {
     EXPECT_TRUE(rights.get_bking_castle_king());
 
     // set by string
-    std::string s1 = "KQkq";
+    std::string   s1 = "KQkq";
     board_state_t rights_1(0);
 
     rights_1.set_castling_rights(s1);
@@ -54,7 +53,7 @@ TEST_F(CastlingRightsTest, set_function_test) {
     EXPECT_TRUE(rights_1.get_bking_castle_queen());
     EXPECT_TRUE(rights_1.get_bking_castle_king());
 
-    std::string s2 = "-";
+    std::string   s2 = "-";
     board_state_t rights_2;
 
     rights_2.set_castling_rights(s2);
@@ -64,8 +63,7 @@ TEST_F(CastlingRightsTest, set_function_test) {
     EXPECT_FALSE(rights_2.get_bking_castle_king());
 }
 
-TEST_F(CastlingRightsTest, revoke_function_test)
-{
+TEST_F(CastlingRightsTest, revoke_function_test) {
     board_state_t rights;
     // Test revoking castling rights
     rights.revoke_castling_rights(WHITE);
