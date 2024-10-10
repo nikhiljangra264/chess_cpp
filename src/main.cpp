@@ -2,16 +2,16 @@
 #include "lib/hashing.h"
 #include "lib/misc.h"
 
-int main(int argc, char const* argv[])
-{
+int main(int argc, char const* argv[]) {
     // uci instance
     UCI uci;
 
-    try {
+    try
+    {
         Zobrist::init_zobrist_hash();
         uci.loop(argc, argv);
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e)
+    {
         LOG::log_error(std::string(e.what()));
         LOG::shutdown();
         return EXIT_FAILURE;

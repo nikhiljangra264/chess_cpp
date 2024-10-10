@@ -8,7 +8,8 @@ void UCI::stop() {
     engine.stop();
 
     // Join the thread
-    if (thread && thread->joinable()) {
+    if (thread && thread->joinable())
+    {
         thread->join();
         thread.reset();
     }
@@ -19,8 +20,7 @@ void UCI::eval() {
     sync_cout << e << sync_endl;
 }
 
-void UCI::loop(int argc, const char* argv[])
-{
+void UCI::loop(int argc, const char* argv[]) {
     std::string token, cmd;
 
     for (int i = 1; i < argc; ++i)
@@ -44,11 +44,13 @@ void UCI::loop(int argc, const char* argv[])
             stop();
 
         else if (token == "uci")
-            sync_cout << "id name chesscpp_3" << "\n"
-            << "id author Nikhil" << "\n"
-            << "option name Hash type spin default 128 min 1 max 65536\n"
-            << "option name LogFile type check default false\n"
-            << "uciok" << sync_endl;
+            sync_cout << "id name chesscpp_3"
+                      << "\n"
+                      << "id author Nikhil"
+                      << "\n"
+                      << "option name Hash type spin default 128 min 1 max 65536\n"
+                      << "option name LogFile type check default false\n"
+                      << "uciok" << sync_endl;
 
         else if (token == "go")
             go(is);
@@ -75,15 +77,15 @@ void UCI::loop(int argc, const char* argv[])
 
         else if (token == "--help" || token == "help" || token == "--license" || token == "license")
             sync_cout
-            << "\nchess_cpp uses UCI protocol to communicate with a GUI, an API, etc."
-            << "\nTry position, go, uci, readyok command"
-            << "\nType quit to exit the engine."
-            << "\nFor any further information, visit https://github.com/nikhiljangra264/chess_cpp#readme"
-            << sync_endl;
+              << "\nchess_cpp uses UCI protocol to communicate with a GUI, an API, etc."
+              << "\nTry position, go, uci, readyok command"
+              << "\nType quit to exit the engine."
+              << "\nFor any further information, visit https://github.com/nikhiljangra264/chess_cpp#readme"
+              << sync_endl;
 
         else if (!token.empty())
             sync_cout << "Unknown command: '" << cmd << "'. Type help for more information."
-            << sync_endl;
+                      << sync_endl;
 
         if (!std::getline(std::cin, cmd))
         {
@@ -94,8 +96,7 @@ void UCI::loop(int argc, const char* argv[])
     } while (token != "quit");
 }
 
-void UCI::position(std::istringstream& is)
-{
+void UCI::position(std::istringstream& is) {
     std::string token, fen;
 
     is >> token;
@@ -121,21 +122,19 @@ void UCI::position(std::istringstream& is)
     board.set_position(fen, moves);
 }
 
-void UCI::go(std::istringstream& is)
-{
+void UCI::go(std::istringstream& is) {
     if (thread)
         stop();
-    limits_t limits = parse_limits(is);
+    limits_t                    limits = parse_limits(is);
     std::lock_guard<std::mutex> lock(engine_mutex);
     thread = std::make_unique<std::thread>([this, limits]() { engine.go(board, limits); });
 }
 
-void UCI::setoptions(std::istringstream& is)
-{
+void UCI::setoptions(std::istringstream& is) {
     // if engine running donot update the options
     std::lock_guard<std::mutex> lock(engine_mutex);
 
-    options_t options;
+    options_t   options;
     std::string token;
 
     while (is >> token)
@@ -145,8 +144,9 @@ void UCI::setoptions(std::istringstream& is)
             is >> token;
             if (token == "Hash")
             {
-                is >> token; // value
-                if (!(is >> token)) {
+                is >> token;  // value
+                if (!(is >> token))
+                {
                     options.tt_size = TT::DEFAULT_TT_SIZE;
                     LOG::log_error("Invalid value for tt size");
                 }
@@ -168,13 +168,12 @@ void UCI::setoptions(std::istringstream& is)
             }
         }
     }
-    if(options.tt_size != TT::tt.size())
+    if (options.tt_size != TT::tt.size())
         engine.set_options(options.tt_size);
 }
 
-limits_t UCI::parse_limits(std::istringstream& is)
-{
-    limits_t limits;
+limits_t UCI::parse_limits(std::istringstream& is) {
+    limits_t    limits;
     std::string token;
 
     // start time as early as possible
